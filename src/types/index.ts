@@ -1,0 +1,47 @@
+export type DuelStatus = "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+export type TransactionType =
+  | "INITIAL_BALANCE"
+  | "DUEL_LOCK"
+  | "DUEL_WIN"
+  | "DUEL_REFUND"
+  | "ADMIN_CREDIT"
+  | "ADMIN_DEBIT"
+  | "ADMIN_RESET";
+
+export interface User {
+  id: string;
+  username: string;
+  balance: number;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
+export interface Duel {
+  id: string;
+  challengerId: string;
+  opponentId: string;
+  betAmount: number;
+  status: DuelStatus;
+  challengerVote: string | null;
+  opponentVote: string | null;
+  winnerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  challenger: User;
+  opponent: User;
+}
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  amount: number;
+  type: TransactionType;
+  description: string | null;
+  duelId: string | null;
+  createdAt: string;
+}
+
+export interface AuthPayload {
+  userId: string;
+  isAdmin: boolean;
+}

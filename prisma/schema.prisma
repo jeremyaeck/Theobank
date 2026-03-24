@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  balance      Int      @default(50)
+  isAdmin      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  duelsAsChallenger Duel[]        @relation("Challenger")
+  duelsAsOpponent   Duel[]        @relation("Opponent")
+  transactions      Transaction[]
+}
+
+enum DuelStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Duel {
+  id             String     @id @default(cuid())
+  challengerId   String
+  opponentId     String
+  betAmount      Int
+  status         DuelStatus @default(PENDING)
+  challengerVote String?
+  opponentVote   String?
+  winnerId       String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  challenger   User          @relation("Challenger", fields: [challengerId], references: [id])
+  opponent     User          @relation("Opponent", fields: [opponentId], references: [id])
+  transactions Transaction[]
+}
+
+enum TransactionType {
+  INITIAL_BALANCE
+  DUEL_LOCK
+  DUEL_WIN
+  DUEL_REFUND
+  ADMIN_CREDIT
+  ADMIN_DEBIT
+  ADMIN_RESET
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  userId      String
+  amount      Int
+  type        TransactionType
+  description String?
+  duelId      String?
+  createdAt   DateTime        @default(now())
+
+  user User  @relation(fields: [userId], references: [id])
+  duel Duel? @relation(fields: [duelId], references: [id])
+}

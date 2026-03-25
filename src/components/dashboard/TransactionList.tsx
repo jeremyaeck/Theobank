@@ -13,6 +13,7 @@ const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   ADMIN_CREDIT: { label: "Crédit Banque", icon: "🏦" },
   ADMIN_DEBIT: { label: "Débit Banque", icon: "🏦" },
   ADMIN_RESET: { label: "Réinitialisation", icon: "🔄" },
+  AUCTION_BID: { label: "Enchère", icon: "🔨" },
 };
 
 export default function TransactionList() {

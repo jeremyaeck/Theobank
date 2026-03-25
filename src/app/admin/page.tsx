@@ -7,14 +7,15 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { getInitials, getAvatarColor, formatTD } from "@/lib/utils";
-import type { User, Duel } from "@/types";
+import type { User, Duel, AuctionPhase } from "@/types";
 
 export default function AdminPage() {
   const { token } = useAuth();
   const { addToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [duels, setDuels] = useState<Duel[]>([]);
-  const [tab, setTab] = useState<"players" | "duels">("players");
+  const [auctionPhases, setAuctionPhases] = useState<AuctionPhase[]>([]);
+  const [tab, setTab] = useState<"players" | "duels" | "auctions">("players");
   const [loading, setLoading] = useState(true);
 
   // Credit/debit modal
@@ -28,10 +29,12 @@ export default function AdminPage() {
     Promise.all([
       fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
       fetch("/api/admin/duels", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+      fetch("/api/auctions", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
     ])
-      .then(([uData, dData]) => {
+      .then(([uData, dData, aData]) => {
         setUsers(uData.users || []);
         setDuels(dData.duels || []);
+        setAuctionPhases(aData.phases || []);
       })
       .finally(() => setLoading(false));
   };
@@ -144,6 +147,16 @@ export default function AdminPage() {
               Duels
             </button>
             <button
+              onClick={() => setTab("auctions")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                tab === "auctions"
+                  ? "bg-orange-500/20 border border-orange-500/40 text-orange-300"
+                  : "bg-white/5 text-white/50 hover:bg-white/10"
+              }`}
+            >
+              Enchères
+            </button>
+            <button
               onClick={handleReset}
               className="ml-auto px-4 py-2 rounded-lg text-sm font-medium bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 transition-all"
             >
@@ -220,6 +233,124 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          )}
+          {/* Auctions tab */}
+          {tab === "auctions" && (
+            <div className="space-y-4">
+              {auctionPhases.length === 0 ? (
+                <p className="text-white/40 text-center py-8">Aucune phase d&apos;enchère</p>
+              ) : (
+                auctionPhases.map((phase) => {
+                  const totalBids = phase.items.reduce(
+                    (sum, item) => sum + (item.bids?.length || 0),
+                    0
+                  );
+                  const totalAmount = phase.items.reduce(
+                    (sum, item) =>
+                      sum + (item.bids?.reduce((s, b) => s + b.amount, 0) || 0),
+                    0
+                  );
+                  const uniqueBidders = new Set(
+                    phase.items.flatMap((item) => item.bids?.map((b) => b.userId) || [])
+                  ).size;
+
+                  return (
+                    <div key={phase.id} className="glass p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-white/90">
+                          Phase {phase.phase}
+                        </h3>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            phase.status === "LOCKED"
+                              ? "bg-white/5 text-white/40"
+                              : phase.status === "ACTIVE"
+                              ? "bg-green-500/10 text-green-400"
+                              : "bg-purple-500/10 text-purple-400"
+                          }`}
+                        >
+                          {phase.status === "LOCKED"
+                            ? "Verrouillée"
+                            : phase.status === "ACTIVE"
+                            ? "En cours"
+                            : "Terminée"}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {phase.items.map((item) => (
+                          <div key={item.id} className="bg-white/5 rounded-lg p-2">
+                            <p className="text-white/70 truncate">
+                              {item.isMystery ? `🎁 ${item.name}` : item.name}
+                            </p>
+                            {phase.status === "FINISHED" && item.winner && (
+                              <p className="text-yellow-400 text-[10px]">
+                                🏆 {item.winner.username} ({item.winningBid} T$)
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-white/40">
+                        <span>{uniqueBidders} joueur(s) • {totalBids} mise(s) • {totalAmount} T$</span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        {phase.status === "LOCKED" && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Lancer la phase ${phase.phase} ? (5 minutes)`)) return;
+                              try {
+                                const res = await fetch(
+                                  `/api/admin/auctions/${phase.id}/start`,
+                                  {
+                                    method: "POST",
+                                    headers: { Authorization: `Bearer ${token}` },
+                                  }
+                                );
+                                if (!res.ok) throw new Error();
+                                addToast(`Phase ${phase.phase} lancée !`, "success");
+                                fetchData();
+                              } catch {
+                                addToast("Erreur", "error");
+                              }
+                            }}
+                            className="flex-1 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-bold hover:opacity-90"
+                          >
+                            Lancer la phase
+                          </button>
+                        )}
+                        {phase.status === "ACTIVE" && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Terminer la phase ${phase.phase} maintenant ?`)) return;
+                              try {
+                                const res = await fetch(
+                                  `/api/admin/auctions/${phase.id}/resolve`,
+                                  {
+                                    method: "POST",
+                                    headers: { Authorization: `Bearer ${token}` },
+                                  }
+                                );
+                                if (!res.ok) throw new Error();
+                                addToast(`Phase ${phase.phase} terminée !`, "success");
+                                fetchData();
+                              } catch {
+                                addToast("Erreur", "error");
+                              }
+                            }}
+                            className="flex-1 py-2 rounded-lg bg-gradient-to-r from-red-600 to-pink-600 text-white text-sm font-bold hover:opacity-90"
+                          >
+                            Terminer maintenant
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           )}

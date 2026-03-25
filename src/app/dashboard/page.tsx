@@ -29,12 +29,20 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Link
-            href="/duels/new"
-            className="block w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 text-white text-center text-lg font-bold hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/20"
-          >
-            Défier un joueur
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              href="/duels/new"
+              className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 text-white text-center text-lg font-bold hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/20"
+            >
+              Défier
+            </Link>
+            <Link
+              href="/auctions"
+              className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 text-white text-center text-lg font-bold hover:opacity-90 transition-opacity shadow-lg shadow-orange-500/20"
+            >
+              Enchérir
+            </Link>
+          </div>
         </motion.div>
 
         <motion.div

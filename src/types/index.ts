@@ -6,7 +6,8 @@ export type TransactionType =
   | "DUEL_REFUND"
   | "ADMIN_CREDIT"
   | "ADMIN_DEBIT"
-  | "ADMIN_RESET";
+  | "ADMIN_RESET"
+  | "AUCTION_BID";
 
 export interface User {
   id: string;
@@ -44,4 +45,38 @@ export interface Transaction {
 export interface AuthPayload {
   userId: string;
   isAdmin: boolean;
+}
+
+export type AuctionPhaseStatus = "LOCKED" | "ACTIVE" | "FINISHED";
+
+export interface AuctionBid {
+  id: string;
+  userId: string;
+  itemId: string;
+  amount: number;
+  validatedAt: string;
+  user?: User;
+}
+
+export interface AuctionItem {
+  id: string;
+  name: string;
+  displayName: string;
+  isMystery: boolean;
+  position: number;
+  phaseId: string;
+  winnerId: string | null;
+  winner?: User | null;
+  winningBid: number | null;
+  bids?: AuctionBid[];
+}
+
+export interface AuctionPhase {
+  id: string;
+  phase: number;
+  status: AuctionPhaseStatus;
+  startedAt: string | null;
+  endsAt: string | null;
+  items: AuctionItem[];
+  createdAt: string;
 }

@@ -19,6 +19,8 @@ model User {
   duelsAsChallenger Duel[]        @relation("Challenger")
   duelsAsOpponent   Duel[]        @relation("Opponent")
   transactions      Transaction[]
+  auctionBids       AuctionBid[]
+  auctionWins       AuctionItem[]
 }
 
 enum DuelStatus {
@@ -53,6 +55,7 @@ enum TransactionType {
   ADMIN_CREDIT
   ADMIN_DEBIT
   ADMIN_RESET
+  AUCTION_BID
 }
 
 model Transaction {
@@ -66,4 +69,46 @@ model Transaction {
 
   user User  @relation(fields: [userId], references: [id])
   duel Duel? @relation(fields: [duelId], references: [id])
+}
+
+enum AuctionPhaseStatus {
+  LOCKED
+  ACTIVE
+  FINISHED
+}
+
+model AuctionPhase {
+  id        String             @id @default(cuid())
+  phase     Int                @unique
+  status    AuctionPhaseStatus @default(LOCKED)
+  startedAt DateTime?
+  endsAt    DateTime?
+  items     AuctionItem[]
+  createdAt DateTime           @default(now())
+}
+
+model AuctionItem {
+  id          String       @id @default(cuid())
+  name        String
+  displayName String
+  isMystery   Boolean      @default(false)
+  phaseId     String
+  phase       AuctionPhase @relation(fields: [phaseId], references: [id])
+  position    Int
+  bids        AuctionBid[]
+  winnerId    String?
+  winner      User?        @relation(fields: [winnerId], references: [id])
+  winningBid  Int?
+}
+
+model AuctionBid {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  itemId      String
+  item        AuctionItem @relation(fields: [itemId], references: [id])
+  amount      Int
+  validatedAt DateTime @default(now())
+
+  @@unique([userId, itemId])
 }

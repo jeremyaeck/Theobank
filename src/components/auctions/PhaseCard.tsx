@@ -8,6 +8,7 @@ import CountdownTimer from "./CountdownTimer";
 interface PhaseCardProps {
   phase: AuctionPhase;
   index: number;
+  serverTimeOffset?: number;
 }
 
 const STATUS_CONFIG = {
@@ -16,7 +17,7 @@ const STATUS_CONFIG = {
   FINISHED: { label: "Terminée", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/30", icon: "✅" },
 };
 
-export default function PhaseCard({ phase, index }: PhaseCardProps) {
+export default function PhaseCard({ phase, index, serverTimeOffset = 0 }: PhaseCardProps) {
   const config = STATUS_CONFIG[phase.status];
   const isActive = phase.status === "ACTIVE";
   const isFinished = phase.status === "FINISHED";
@@ -58,7 +59,7 @@ export default function PhaseCard({ phase, index }: PhaseCardProps) {
         </div>
 
         {isActive && phase.endsAt && (
-          <CountdownTimer endsAt={phase.endsAt} />
+          <CountdownTimer endsAt={phase.endsAt} serverTimeOffset={serverTimeOffset} />
         )}
 
         {isFinished && (

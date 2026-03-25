@@ -7,7 +7,9 @@ export type TransactionType =
   | "ADMIN_CREDIT"
   | "ADMIN_DEBIT"
   | "ADMIN_RESET"
-  | "AUCTION_BID";
+  | "AUCTION_BID"
+  | "BONUS_STEAL_GAIN"
+  | "BONUS_STEAL_LOSS";
 
 export interface User {
   id: string;
@@ -45,6 +47,24 @@ export interface Transaction {
 export interface AuthPayload {
   userId: string;
   isAdmin: boolean;
+}
+
+export type BonusType = "CLASSEMENT" | "SOLDE_MAX" | "SOLDE_MOYEN" | "GAIN_DOUBLE" | "VOL";
+
+export interface BonusUsage {
+  id: string;
+  userId: string;
+  bonusType: BonusType;
+  usedAt: string;
+  expiresAt: string | null;
+  data: any;
+}
+
+export interface StealAlert {
+  id: string;
+  thiefUsername: string;
+  amount: number;
+  usedAt: string;
 }
 
 export type AuctionPhaseStatus = "LOCKED" | "ACTIVE" | "FINISHED";

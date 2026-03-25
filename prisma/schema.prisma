@@ -21,6 +21,7 @@ model User {
   transactions      Transaction[]
   auctionBids       AuctionBid[]
   auctionWins       AuctionItem[]
+  bonusUsages       BonusUsage[]
 }
 
 enum DuelStatus {
@@ -56,6 +57,8 @@ enum TransactionType {
   ADMIN_DEBIT
   ADMIN_RESET
   AUCTION_BID
+  BONUS_STEAL_GAIN
+  BONUS_STEAL_LOSS
 }
 
 model Transaction {
@@ -111,4 +114,22 @@ model AuctionBid {
   validatedAt DateTime @default(now())
 
   @@unique([userId, itemId])
+}
+
+enum BonusType {
+  CLASSEMENT
+  SOLDE_MAX
+  SOLDE_MOYEN
+  GAIN_DOUBLE
+  VOL
+}
+
+model BonusUsage {
+  id        String    @id @default(cuid())
+  userId    String
+  bonusType BonusType
+  usedAt    DateTime  @default(now())
+  expiresAt DateTime?
+  data      Json?
+  user      User      @relation(fields: [userId], references: [id])
 }

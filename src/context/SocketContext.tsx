@@ -1,15 +1,20 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastContext";
+import type { StealAlert } from "@/types";
 
 interface PollingContextType {
   refresh: () => void;
+  currentStealAlert: StealAlert | null;
+  dismissStealAlert: () => void;
 }
 
 const SocketContext = createContext<PollingContextType>({
   refresh: () => {},
+  currentStealAlert: null,
+  dismissStealAlert: () => {},
 });
 
 export function useSocket() {
@@ -21,12 +26,18 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const { addToast } = useToast();
   const lastBalanceRef = useRef<number | null>(null);
   const lastDuelCountRef = useRef<number | null>(null);
+  const seenStealAlertIds = useRef<Set<string>>(new Set());
+  const [currentStealAlert, setCurrentStealAlert] = useState<StealAlert | null>(null);
+
+  const dismissStealAlert = useCallback(() => {
+    setCurrentStealAlert(null);
+  }, []);
 
   const pollForChanges = useCallback(async () => {
     if (!token || !user) return;
 
     try {
-      // Check balance changes
+      // Check balance changes + steal alerts
       const meRes = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -39,11 +50,27 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           if (diff > 0) {
             addToast(`+${diff} T$ reçus!`, "success");
           } else {
-            addToast(`${diff} T$`, "info");
+            // Don't show generic toast if it's a steal (the overlay handles it)
+            const hasNewSteal = (meData.stealAlerts || []).some(
+              (a: StealAlert) => !seenStealAlertIds.current.has(a.id)
+            );
+            if (!hasNewSteal) {
+              addToast(`${diff} T$`, "info");
+            }
           }
           refreshUser();
         }
         lastBalanceRef.current = newBalance;
+
+        // Check for new steal alerts
+        const alerts: StealAlert[] = meData.stealAlerts || [];
+        for (const alert of alerts) {
+          if (!seenStealAlertIds.current.has(alert.id)) {
+            seenStealAlertIds.current.add(alert.id);
+            setCurrentStealAlert(alert);
+            break; // Show one at a time
+          }
+        }
       }
 
       // Check for new pending duels
@@ -83,7 +110,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, [pollForChanges, refreshUser]);
 
   return (
-    <SocketContext.Provider value={{ refresh }}>
+    <SocketContext.Provider value={{ refresh, currentStealAlert, dismissStealAlert }}>
       {children}
     </SocketContext.Provider>
   );

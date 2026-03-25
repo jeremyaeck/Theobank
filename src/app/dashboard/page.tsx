@@ -43,6 +43,12 @@ export default function DashboardPage() {
               Enchérir
             </Link>
           </div>
+          <Link
+            href="/bonuses"
+            className="block w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white text-center text-lg font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20"
+          >
+            Bonus
+          </Link>
         </motion.div>
 
         <motion.div

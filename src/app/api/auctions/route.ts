@@ -45,10 +45,10 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { phase: "asc" },
     });
-    return NextResponse.json({ phases: sanitizePhases(updated, user.isAdmin) });
+    return NextResponse.json({ phases: sanitizePhases(updated, user.isAdmin), serverTime: new Date().toISOString() });
   }
 
-  return NextResponse.json({ phases: sanitizePhases(phases, user.isAdmin) });
+  return NextResponse.json({ phases: sanitizePhases(phases, user.isAdmin), serverTime: new Date().toISOString() });
 }
 
 function sanitizePhases(phases: any[], isAdmin: boolean) {

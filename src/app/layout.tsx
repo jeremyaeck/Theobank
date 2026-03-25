@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { SocketProvider } from "@/context/SocketContext";
+import StealAlertWrapper from "@/components/bonuses/StealAlertWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <ToastProvider>
             <SocketProvider>
+              <StealAlertWrapper />
               {children}
             </SocketProvider>
           </ToastProvider>

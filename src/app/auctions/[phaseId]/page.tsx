@@ -25,15 +25,25 @@ export default function AuctionPhasePage() {
   const [submitting, setSubmitting] = useState(false);
   const [hasValidated, setHasValidated] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [serverTimeOffset, setServerTimeOffset] = useState(0);
 
   const fetchPhase = useCallback(async () => {
     if (!token) return;
     try {
+      const fetchStart = Date.now();
       const res = await fetch("/api/auctions", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
+        // Calculate clock offset: clientTime - serverTime
+        // Account for network latency by using midpoint of request
+        if (data.serverTime) {
+          const fetchEnd = Date.now();
+          const clientMidpoint = (fetchStart + fetchEnd) / 2;
+          const serverTime = new Date(data.serverTime).getTime();
+          setServerTimeOffset(clientMidpoint - serverTime);
+        }
         const found = (data.phases || []).find((p: AuctionPhase) => p.id === phaseId);
         if (found) {
           setPhase(found);
@@ -146,7 +156,7 @@ export default function AuctionPhasePage() {
 
         {isActive && phase.endsAt && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="glass p-4">
-            <CountdownTimer endsAt={phase.endsAt} onExpired={fetchPhase} />
+            <CountdownTimer endsAt={phase.endsAt} serverTimeOffset={serverTimeOffset} onExpired={fetchPhase} />
           </motion.div>
         )}
 

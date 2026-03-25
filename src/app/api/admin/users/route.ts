@@ -42,17 +42,38 @@ export async function PATCH(req: NextRequest) {
     }
 
     const updated = await prisma.$transaction(async (tx) => {
+      let finalAmount = amount;
+      let doubleApplied = false;
+
+      // Check for active "Gain Doublé" bonus on credits
+      if (amount > 0) {
+        const activeDouble = await tx.bonusUsage.findFirst({
+          where: {
+            userId,
+            bonusType: "GAIN_DOUBLE",
+            expiresAt: { gt: new Date() },
+          },
+        });
+        if (activeDouble) {
+          finalAmount = amount * 2;
+          doubleApplied = true;
+        }
+      }
+
       const u = await tx.user.update({
         where: { id: userId },
-        data: { balance: { increment: amount } },
+        data: { balance: { increment: finalAmount } },
       });
+
+      const defaultDesc = finalAmount >= 0 ? "Crédit de la Banque" : "Débit de la Banque";
+      const desc = reason || defaultDesc;
 
       await tx.transaction.create({
         data: {
           userId,
-          amount,
-          type: amount >= 0 ? "ADMIN_CREDIT" : "ADMIN_DEBIT",
-          description: reason || (amount >= 0 ? "Crédit de la Banque" : "Débit de la Banque"),
+          amount: finalAmount,
+          type: finalAmount >= 0 ? "ADMIN_CREDIT" : "ADMIN_DEBIT",
+          description: doubleApplied ? `${desc} (x2 bonus)` : desc,
         },
       });
 

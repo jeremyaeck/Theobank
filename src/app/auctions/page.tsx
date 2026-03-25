@@ -13,15 +13,23 @@ export default function AuctionsPage() {
   const { token } = useAuth();
   const [phases, setPhases] = useState<AuctionPhase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [serverTimeOffset, setServerTimeOffset] = useState(0);
 
   const fetchPhases = async () => {
     if (!token) return;
     try {
+      const fetchStart = Date.now();
       const res = await fetch("/api/auctions", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
+        if (data.serverTime) {
+          const fetchEnd = Date.now();
+          const clientMidpoint = (fetchStart + fetchEnd) / 2;
+          const serverTime = new Date(data.serverTime).getTime();
+          setServerTimeOffset(clientMidpoint - serverTime);
+        }
         setPhases(data.phases || []);
       }
     } catch {
@@ -62,7 +70,7 @@ export default function AuctionsPage() {
         ) : (
           <div className="space-y-4">
             {phases.map((phase, i) => (
-              <PhaseCard key={phase.id} phase={phase} index={i} />
+              <PhaseCard key={phase.id} phase={phase} index={i} serverTimeOffset={serverTimeOffset} />
             ))}
           </div>
         )}

@@ -4,15 +4,16 @@ import { useState, useEffect } from "react";
 
 interface CountdownTimerProps {
   endsAt: string;
+  serverTimeOffset?: number; // client time - server time (ms)
   onExpired?: () => void;
 }
 
-export default function CountdownTimer({ endsAt, onExpired }: CountdownTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(getTimeLeft(endsAt));
+export default function CountdownTimer({ endsAt, serverTimeOffset = 0, onExpired }: CountdownTimerProps) {
+  const [timeLeft, setTimeLeft] = useState(getTimeLeft(endsAt, serverTimeOffset));
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const remaining = getTimeLeft(endsAt);
+      const remaining = getTimeLeft(endsAt, serverTimeOffset);
       setTimeLeft(remaining);
       if (remaining.total <= 0) {
         clearInterval(interval);
@@ -20,7 +21,7 @@ export default function CountdownTimer({ endsAt, onExpired }: CountdownTimerProp
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [endsAt, onExpired]);
+  }, [endsAt, serverTimeOffset, onExpired]);
 
   const isUrgent = timeLeft.total <= 60000 && timeLeft.total > 0;
   const isExpired = timeLeft.total <= 0;
@@ -43,8 +44,10 @@ export default function CountdownTimer({ endsAt, onExpired }: CountdownTimerProp
   );
 }
 
-function getTimeLeft(endsAt: string) {
-  const total = Math.max(0, new Date(endsAt).getTime() - Date.now());
+function getTimeLeft(endsAt: string, serverTimeOffset: number = 0) {
+  // Corrected now = client clock minus the offset (client ahead → positive offset → subtract)
+  const correctedNow = Date.now() - serverTimeOffset;
+  const total = Math.max(0, new Date(endsAt).getTime() - correctedNow);
   const minutes = Math.floor(total / 60000);
   const seconds = Math.floor((total % 60000) / 1000);
   return { total, minutes, seconds };

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   const users = await prisma.user.findMany({
     where: { isAdmin: false },
-    select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true },
+    select: { id: true, username: true, balance: true, isAdmin: true, approved: true, createdAt: true },
     orderBy: { username: "asc" },
   });
 

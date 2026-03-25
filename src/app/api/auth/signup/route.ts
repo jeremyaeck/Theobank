@@ -20,16 +20,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
     const user = await prisma.user.create({
-      data: { username, passwordHash, balance: 50 },
-    });
-
-    await prisma.transaction.create({
-      data: {
-        userId: user.id,
-        amount: 50,
-        type: "INITIAL_BALANCE",
-        description: "Solde initial",
-      },
+      data: { username, passwordHash, balance: 0, approved: false },
     });
 
     const token = signToken({ userId: user.id, isAdmin: false });
@@ -41,6 +32,7 @@ export async function POST(req: NextRequest) {
         username: user.username,
         balance: user.balance,
         isAdmin: user.isAdmin,
+        approved: user.approved,
         createdAt: user.createdAt.toISOString(),
       },
     });

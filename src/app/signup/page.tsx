@@ -47,7 +47,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <h1 className="text-5xl font-black gradient-text mb-2">T$</h1>
           <p className="text-xl font-semibold text-white/80">Créer un compte</p>
-          <p className="text-sm text-white/40 mt-1">Recevez 50 T$ pour commencer!</p>
+          <p className="text-sm text-white/40 mt-1">Inscrivez-vous et recevez 50 T$ après validation</p>
         </div>
 
         <form onSubmit={handleSubmit} className="glass-strong p-6 space-y-4">

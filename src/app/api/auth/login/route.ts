@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
         username: user.username,
         balance: user.balance,
         isAdmin: user.isAdmin,
+        approved: user.approved,
         createdAt: user.createdAt.toISOString(),
       },
     });

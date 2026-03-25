@@ -74,7 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("token", data.token);
     setToken(data.token);
     setUser(data.user);
-    router.push(data.user.isAdmin ? "/admin" : "/dashboard");
+    if (data.user.isAdmin) {
+      router.push("/admin");
+    } else if (!data.user.approved) {
+      router.push("/pending");
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   const signup = async (username: string, password: string) => {
@@ -88,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("token", data.token);
     setToken(data.token);
     setUser(data.user);
-    router.push("/dashboard");
+    router.push(data.user.approved ? "/dashboard" : "/pending");
   };
 
   const logout = () => {

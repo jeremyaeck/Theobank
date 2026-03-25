@@ -12,6 +12,8 @@ export default function ActiveDuels() {
 
   const fetchDuels = () => {
     if (!token) return;
+    // Trigger auto-expire of old pending duels
+    fetch("/api/duels/expire", { method: "POST" }).catch(() => {});
     fetch("/api/duels", {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -22,7 +24,7 @@ export default function ActiveDuels() {
 
   useEffect(() => {
     fetchDuels();
-    const interval = setInterval(fetchDuels, 5000);
+    const interval = setInterval(fetchDuels, 10000);
     return () => clearInterval(interval);
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 

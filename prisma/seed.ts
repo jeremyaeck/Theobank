@@ -15,6 +15,7 @@ async function main() {
       passwordHash,
       balance: 999999999,
       isAdmin: true,
+      approved: true,
     },
   });
 

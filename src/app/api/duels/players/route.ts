@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
   if (!user) return unauthorized();
 
   const players = await prisma.user.findMany({
-    where: { isAdmin: false },
-    select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true },
+    where: { isAdmin: false, approved: true },
+    select: { id: true, username: true, isAdmin: true, createdAt: true },
     orderBy: { username: "asc" },
   });
 

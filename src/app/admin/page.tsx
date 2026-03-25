@@ -190,20 +190,52 @@ export default function AdminPage() {
                         {getInitials(u.username)}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white/90">{u.username}</p>
+                        <p className="text-sm font-medium text-white/90">
+                          {u.username}
+                          {!u.approved && (
+                            <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              En attente
+                            </span>
+                          )}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-lg font-bold text-cyan-400">{u.balance} T$</span>
-                      <button
-                        onClick={() => {
-                          setModalUser(u);
-                          setModalAmount(10);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm hover:bg-purple-500/30 transition-all"
-                      >
-                        Gérer
-                      </button>
+                      {!u.approved ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch("/api/admin/approve", {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ userId: u.id }),
+                              });
+                              if (!res.ok) throw new Error();
+                              addToast(`${u.username} approuvé — 50 T$ crédités`, "success");
+                              fetchData();
+                            } catch {
+                              addToast("Erreur d'approbation", "error");
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-green-500/20 border border-green-500/30 text-green-300 text-sm hover:bg-green-500/30 transition-all"
+                        >
+                          Approuver
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setModalUser(u);
+                            setModalAmount(10);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm hover:bg-purple-500/30 transition-all"
+                        >
+                          Gérer
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))

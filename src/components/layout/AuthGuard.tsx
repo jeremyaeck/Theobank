@@ -18,6 +18,8 @@ export default function AuthGuard({
     if (!loading) {
       if (!user) {
         router.push("/login");
+      } else if (!user.isAdmin && !user.approved) {
+        router.push("/pending");
       } else if (requireAdmin && !user.isAdmin) {
         router.push("/dashboard");
       }

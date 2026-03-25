@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
       username: user.username,
       balance: user.balance,
       isAdmin: user.isAdmin,
+      approved: user.approved,
       createdAt: user.createdAt.toISOString(),
     },
     stealAlerts: stealAlerts.map((a) => ({

@@ -16,6 +16,7 @@ export interface User {
   username: string;
   balance: number;
   isAdmin: boolean;
+  approved?: boolean;
   createdAt: string;
 }
 

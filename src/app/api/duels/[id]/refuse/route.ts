@@ -19,14 +19,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Vous n'êtes pas le joueur défié" }, { status: 403 });
   }
 
-  const updated = await prisma.duel.update({
-    where: { id },
-    data: { status: "CANCELLED" },
-    include: {
-      challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-      opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-    },
+  // Refund challenger and cancel duel
+  const result = await prisma.$transaction(async (tx) => {
+    // Refund challenger
+    await tx.user.update({
+      where: { id: duel.challengerId },
+      data: { balance: { increment: duel.betAmount } },
+    });
+
+    await tx.transaction.create({
+      data: {
+        userId: duel.challengerId,
+        amount: duel.betAmount,
+        type: "DUEL_REFUND",
+        description: `Défi refusé — mise restituée`,
+        duelId: id,
+      },
+    });
+
+    const d = await tx.duel.update({
+      where: { id },
+      data: { status: "CANCELLED" },
+      include: {
+        challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+        opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+      },
+    });
+
+    return d;
   });
 
-  return NextResponse.json({ duel: updated });
+  return NextResponse.json({ duel: result });
 }

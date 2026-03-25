@@ -51,19 +51,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Vous ne pouvez pas défier la Banque" }, { status: 400 });
     }
 
-    const duel = await prisma.duel.create({
-      data: {
-        challengerId: user.id,
-        opponentId,
-        betAmount,
-      },
-      include: {
-        challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-        opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-      },
+    // Debit challenger immediately
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { balance: { decrement: betAmount } },
+      });
+
+      await tx.transaction.create({
+        data: {
+          userId: user.id,
+          amount: -betAmount,
+          type: "DUEL_LOCK",
+          description: `Mise bloquée — défi envoyé à ${opponent.username}`,
+        },
+      });
+
+      const d = await tx.duel.create({
+        data: {
+          challengerId: user.id,
+          opponentId,
+          betAmount,
+        },
+        include: {
+          challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+          opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+        },
+      });
+
+      return d;
     });
 
-    return NextResponse.json({ duel });
+    return NextResponse.json({ duel: result });
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: "Données invalides" }, { status: 400 });

@@ -107,7 +107,6 @@ export default function NewDuelPage() {
                       {getInitials(p.username)}
                     </div>
                     <span className="text-sm text-white/80">{p.username}</span>
-                    <span className="text-xs text-white/40 ml-auto">{p.balance} T$</span>
                   </button>
                 ))}
                 {filteredPlayers.length === 0 && (

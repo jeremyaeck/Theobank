@@ -13,7 +13,7 @@ export default function Navbar() {
     <nav className="glass sticky top-0 z-40 mx-4 mt-4 px-4 py-3 flex items-center justify-between">
       <Link href={user.isAdmin ? "/admin" : "/dashboard"} className="flex items-center gap-2">
         <span className="text-2xl font-bold gradient-text">T$</span>
-        <span className="text-sm text-white/60 hidden sm:inline">Theodollars Bank</span>
+        <span className="text-sm text-white/60 hidden sm:inline">Theobank</span>
       </Link>
 
       <div className="flex items-center gap-3">

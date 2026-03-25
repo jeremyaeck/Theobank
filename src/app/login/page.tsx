@@ -35,7 +35,7 @@ export default function LoginPage() {
       >
         <div className="text-center mb-8">
           <h1 className="text-5xl font-black gradient-text mb-2">T$</h1>
-          <p className="text-xl font-semibold text-white/80">Theodollars Bank</p>
+          <p className="text-xl font-semibold text-white/80">Theobank</p>
           <p className="text-sm text-white/40 mt-1">Connectez-vous pour jouer</p>
         </div>
 

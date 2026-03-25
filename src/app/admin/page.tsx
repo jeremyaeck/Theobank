@@ -76,7 +76,7 @@ export default function AdminPage() {
   };
 
   const handleReset = async () => {
-    if (!confirm("Réinitialiser TOUS les soldes à 50 T$ et annuler les duels actifs?")) return;
+    if (!confirm("Réinitialiser TOUS les soldes à 50 T$ et annuler les duels actifs ?")) return;
     try {
       const res = await fetch("/api/admin/reset", {
         method: "POST",

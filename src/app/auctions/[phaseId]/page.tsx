@@ -26,6 +26,8 @@ export default function AuctionPhasePage() {
   const [hasValidated, setHasValidated] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
+  const [stats, setStats] = useState<any>(null);
+  const [showStats, setShowStats] = useState(false);
 
   const fetchPhase = useCallback(async () => {
     if (!token) return;
@@ -66,6 +68,18 @@ export default function AuctionPhasePage() {
     const interval = setInterval(fetchPhase, 3000);
     return () => clearInterval(interval);
   }, [fetchPhase]);
+
+  // Fetch stats when phase is finished
+  useEffect(() => {
+    if (phase?.status === "FINISHED" && token && !stats) {
+      fetch(`/api/auctions/${phaseId}/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((d) => { if (!d.error) setStats(d); })
+        .catch(() => {});
+    }
+  }, [phase?.status, token, phaseId, stats]);
 
   const totalBid = Object.values(bids).reduce((sum, v) => sum + v, 0);
   const balance = user?.balance || 0;
@@ -198,6 +212,88 @@ export default function AuctionPhasePage() {
                 >
                   Valider mes mises
                 </button>
+              </motion.div>
+            )}
+
+            {/* Stats button for finished phases */}
+            {isFinished && stats && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                <button
+                  onClick={() => setShowStats(!showStats)}
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600/80 to-cyan-600/80 text-white text-center font-bold hover:opacity-90 transition-opacity border border-white/10"
+                >
+                  {showStats ? "Masquer les stats" : "📊 Voir les stats"}
+                </button>
+
+                <AnimatePresence>
+                  {showStats && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-4 overflow-hidden"
+                    >
+                      {/* Total bid per item */}
+                      <div className="glass p-4 space-y-3">
+                        <h3 className="text-sm font-bold text-white/80">💰 Argent total misé par objet</h3>
+                        {stats.itemStats.map((item: any) => (
+                          <div key={item.itemId} className="flex items-center justify-between py-1">
+                            <span className="text-sm text-white/70 truncate flex-1">
+                              {item.itemName}
+                            </span>
+                            <div className="text-right ml-3">
+                              <span className="text-sm font-bold text-cyan-400">{item.totalBid} T$</span>
+                              <span className="text-xs text-white/30 ml-2">({item.bidCount} joueur{item.bidCount > 1 ? "s" : ""})</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Top 3 biggest bids */}
+                      {stats.top3.length > 0 && (
+                        <div className="glass p-4 space-y-3">
+                          <h3 className="text-sm font-bold text-white/80">🏆 Top 3 des plus grosses enchères</h3>
+                          {stats.top3.map((bid: any, i: number) => (
+                            <div
+                              key={i}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
+                                i === 0 ? "bg-yellow-500/10 border border-yellow-500/20" : "bg-white/5"
+                              }`}
+                            >
+                              <span className="text-lg font-bold w-8 text-center">
+                                {i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}
+                              </span>
+                              <div className="flex-1">
+                                <p className="text-sm text-white/80 font-medium">{bid.username}</p>
+                                <p className="text-xs text-white/40">{bid.itemName}</p>
+                              </div>
+                              <span className="text-sm font-bold text-cyan-400">{bid.amount} T$</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* My bids */}
+                      <div className="glass p-4 space-y-3">
+                        <h3 className="text-sm font-bold text-white/80">🎯 Vos enchères</h3>
+                        {stats.myBids.filter((b: any) => b.amount > 0).length === 0 ? (
+                          <p className="text-sm text-white/40 text-center py-2">Vous n&apos;avez pas misé sur cette phase</p>
+                        ) : (
+                          stats.myBids
+                            .filter((b: any) => b.amount > 0)
+                            .map((bid: any) => (
+                              <div key={bid.itemId} className="flex items-center justify-between py-1">
+                                <span className="text-sm text-white/70 truncate flex-1">
+                                  {bid.itemName}
+                                </span>
+                                <span className="text-sm font-bold text-cyan-400 ml-3">{bid.amount} T$</span>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
 

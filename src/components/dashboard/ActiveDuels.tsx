@@ -50,7 +50,7 @@ export default function ActiveDuels() {
         {activeDuels.length === 0 ? (
           <div className="glass p-6 text-center">
             <p className="text-white/40 text-sm">Aucun duel en cours</p>
-            <p className="text-white/30 text-xs mt-1">Défiez un joueur pour commencer!</p>
+            <p className="text-white/30 text-xs mt-1">Défiez un joueur pour commencer !</p>
           </div>
         ) : (
           <div className="space-y-3">

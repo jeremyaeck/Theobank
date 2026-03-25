@@ -79,7 +79,7 @@ export default function LoginPage() {
           </button>
 
           <p className="text-center text-sm text-white/40">
-            Pas encore de compte?{" "}
+            Pas encore de compte ?{" "}
             <Link href="/signup" className="text-cyan-400 hover:text-cyan-300 transition-colors">
               S&apos;inscrire
             </Link>

@@ -19,11 +19,11 @@ const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
 };
 
 export default function TransactionList() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchTransactions = () => {
     if (!token) return;
     fetch("/api/transactions", {
       headers: { Authorization: `Bearer ${token}` },
@@ -31,7 +31,18 @@ export default function TransactionList() {
       .then((r) => r.json())
       .then((d) => setTransactions(d.transactions || []))
       .finally(() => setLoading(false));
-  }, [token]);
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+    const interval = setInterval(fetchTransactions, 10000);
+    return () => clearInterval(interval);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refresh when balance changes (duel win, etc.)
+  useEffect(() => {
+    fetchTransactions();
+  }, [user?.balance]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (

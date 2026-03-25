@@ -104,7 +104,7 @@ export default function SignupPage() {
           </button>
 
           <p className="text-center text-sm text-white/40">
-            Déjà un compte?{" "}
+            Déjà un compte ?{" "}
             <Link href="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors">
               Se connecter
             </Link>

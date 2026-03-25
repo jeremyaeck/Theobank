@@ -64,7 +64,7 @@ export default function DuelCard({ duel }: { duel: Duel }) {
             <p className="text-xl font-bold text-cyan-400">{duel.betAmount} T$</p>
             {duel.winnerId && (
               <p className="text-xs text-green-400">
-                {duel.winnerId === user?.id ? "Gagné!" : "Perdu"}
+                {duel.winnerId === user?.id ? "Gagné !" : "Perdu"}
               </p>
             )}
           </div>

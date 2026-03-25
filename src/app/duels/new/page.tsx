@@ -55,7 +55,7 @@ export default function NewDuelPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      addToast("Défi envoyé!", "success");
+      addToast("Défi envoyé !", "success");
       router.push(`/duels/${data.duel.id}`);
     } catch (err: any) {
       addToast(err.message || "Erreur", "error");
@@ -74,7 +74,15 @@ export default function NewDuelPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-2xl font-bold text-white/90 mb-6">Nouveau duel</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-white/90">Nouveau duel</h1>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="text-sm text-white/40 hover:text-white/60 transition-colors"
+            >
+              ← Retour
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Player selection */}

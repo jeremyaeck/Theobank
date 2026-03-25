@@ -12,7 +12,7 @@ import type { Duel } from "@/types";
 
 const STATUS_LABELS: Record<string, { label: string; color: string; desc: string }> = {
   PENDING: { label: "En attente", color: "text-yellow-400", desc: "En attente de réponse de l'adversaire" },
-  ACTIVE: { label: "En cours", color: "text-blue-400", desc: "Votez pour désigner le gagnant!" },
+  ACTIVE: { label: "En cours", color: "text-blue-400", desc: "Votez pour désigner le gagnant !" },
   COMPLETED: { label: "Terminé", color: "text-green-400", desc: "Le duel est terminé" },
   CANCELLED: { label: "Annulé", color: "text-red-400", desc: "Le duel a été annulé" },
 };
@@ -65,7 +65,7 @@ export default function DuelDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setDuel(data.duel);
-      addToast("Duel accepté! Votez maintenant.", "success");
+      addToast("Duel accepté ! Votez maintenant.", "success");
     } catch (err: any) {
       addToast(err.message || "Erreur", "error");
     } finally {
@@ -105,7 +105,7 @@ export default function DuelDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setDuel(data.duel);
-      addToast("Vote enregistré!", "success");
+      addToast("Vote enregistré !", "success");
     } catch (err: any) {
       addToast(err.message || "Erreur", "error");
     } finally {
@@ -148,10 +148,10 @@ export default function DuelDetailPage() {
           <div className="glass-strong gradient-border p-6 text-center space-y-4">
             <div className={`text-sm font-medium ${status.color}`}>{status.label}</div>
 
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-center">
+            <div className="grid grid-cols-3 items-center gap-2">
+              <div className="text-center flex flex-col items-center">
                 <Avatar name={duel.challenger.username} />
-                <p className="text-sm text-white/80 mt-2 font-medium">
+                <p className="text-sm text-white/80 mt-2 font-medium truncate max-w-full">
                   {duel.challenger.username}
                 </p>
                 {isChallenger && (
@@ -159,14 +159,14 @@ export default function DuelDetailPage() {
                 )}
               </div>
 
-              <div className="text-center">
+              <div className="text-center flex flex-col items-center justify-center">
                 <p className="text-3xl font-black gradient-text">{duel.betAmount} T$</p>
-                <p className="text-white/40 text-xs mt-1">mise chacun</p>
+                <p className="text-white/40 text-xs mt-1">misent chacun</p>
               </div>
 
-              <div className="text-center">
+              <div className="text-center flex flex-col items-center">
                 <Avatar name={duel.opponent.username} />
-                <p className="text-sm text-white/80 mt-2 font-medium">
+                <p className="text-sm text-white/80 mt-2 font-medium truncate max-w-full">
                   {duel.opponent.username}
                 </p>
                 {isOpponent && (
@@ -183,7 +183,7 @@ export default function DuelDetailPage() {
                 <p className="text-green-400 font-bold text-lg">
                   {duel.winnerId === user?.id
                     ? `Vous avez gagné ${duel.betAmount * 2} T$!`
-                    : `${duel.winnerId === duel.challengerId ? duel.challenger.username : duel.opponent.username} a gagné`}
+                    : `${duel.winnerId === duel.challengerId ? duel.challenger.username : duel.opponent.username} a gagné !`}
                 </p>
               </div>
             )}
@@ -226,7 +226,7 @@ export default function DuelDetailPage() {
 
           {duel.status === "ACTIVE" && !myVote && (
             <div className="mt-6 space-y-3">
-              <p className="text-center text-white/60 text-sm">Qui a gagné ce duel?</p>
+              <p className="text-center text-white/60 text-sm">Qui a gagné ce duel ?</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => handleVote(duel.challengerId)}

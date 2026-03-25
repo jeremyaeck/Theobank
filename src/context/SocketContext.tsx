@@ -63,7 +63,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         if (lastBalanceRef.current !== null && newBalance !== lastBalanceRef.current) {
           const diff = newBalance - lastBalanceRef.current;
           if (diff > 0) {
-            addToast(`+${diff} T$ reçus!`, "success");
+            addToast(`+${diff} T$ reçus !`, "success");
           } else {
             // Don't show generic toast if it's a steal (the overlay handles it)
             const hasNewSteal = (meData.stealAlerts || []).some(
@@ -99,7 +99,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         ).length;
 
         if (lastDuelCountRef.current !== null && pendingCount > lastDuelCountRef.current) {
-          addToast("Nouveau défi reçu!", "duel");
+          addToast("Nouveau défi reçu !", "duel");
         }
         lastDuelCountRef.current = pendingCount;
       }

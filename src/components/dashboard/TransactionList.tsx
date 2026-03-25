@@ -66,6 +66,9 @@ export default function TransactionList() {
                     <span className="text-lg">{info.icon}</span>
                     <div>
                       <p className="text-sm text-white/80">{info.label}</p>
+                      {tx.description && (tx.type === "BONUS_STEAL_GAIN" || tx.type === "BONUS_STEAL_LOSS") && (
+                        <p className="text-xs text-white/60">{tx.description}</p>
+                      )}
                       <p className="text-xs text-white/40">
                         {new Date(tx.createdAt).toLocaleString("fr-FR", {
                           day: "2-digit",

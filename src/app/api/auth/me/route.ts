@@ -6,12 +6,11 @@ export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
   if (!user) return unauthorized();
 
-  // Check for recent steal alerts (last 60 seconds)
-  const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
+  // Check for unacknowledged steal alerts targeting this user
   const stealAlerts = await prisma.bonusUsage.findMany({
     where: {
       bonusType: "VOL",
-      usedAt: { gt: sixtySecondsAgo },
+      acknowledgedAt: null, // Not yet dismissed by victim
       data: { path: ["victimId"], equals: user.id },
     },
     include: {

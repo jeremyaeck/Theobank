@@ -125,11 +125,12 @@ enum BonusType {
 }
 
 model BonusUsage {
-  id        String    @id @default(cuid())
-  userId    String
-  bonusType BonusType
-  usedAt    DateTime  @default(now())
-  expiresAt DateTime?
-  data      Json?
-  user      User      @relation(fields: [userId], references: [id])
+  id             String    @id @default(cuid())
+  userId         String
+  bonusType      BonusType
+  usedAt         DateTime  @default(now())
+  expiresAt      DateTime?
+  data           Json?
+  acknowledgedAt DateTime? // For VOL: when the victim dismissed the alert
+  user           User      @relation(fields: [userId], references: [id])
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { BonusType } from "@/types";
 
@@ -20,18 +20,26 @@ export default function BonusResultOverlay({
   const [secondsLeft, setSecondsLeft] = useState(() => {
     return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000));
   });
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000));
       setSecondsLeft(remaining);
       if (remaining <= 0) {
-        clearInterval(interval);
-        onClose();
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        onCloseRef.current();
       }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [expiresAt, onClose]);
+    }, 200); // Update more frequently for smoother countdown
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [expiresAt]);
+
+  const isExpired = secondsLeft <= 0;
 
   return (
     <AnimatePresence>
@@ -52,7 +60,9 @@ export default function BonusResultOverlay({
           {/* Timer */}
           <div className="text-center">
             <span className="text-xs text-white/40">Disparaît dans</span>
-            <p className="text-2xl font-mono font-bold text-cyan-400">{secondsLeft}s</p>
+            <p className={`text-2xl font-mono font-bold ${secondsLeft <= 5 ? "text-red-400 animate-pulse" : "text-cyan-400"}`}>
+              {secondsLeft}s
+            </p>
           </div>
 
           {/* Content based on bonus type */}

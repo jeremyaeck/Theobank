@@ -29,9 +29,24 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const seenStealAlertIds = useRef<Set<string>>(new Set());
   const [currentStealAlert, setCurrentStealAlert] = useState<StealAlert | null>(null);
 
-  const dismissStealAlert = useCallback(() => {
+  const dismissStealAlert = useCallback(async () => {
+    if (currentStealAlert && token) {
+      // Acknowledge on server so it doesn't reappear
+      try {
+        await fetch("/api/bonuses/acknowledge", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ alertId: currentStealAlert.id }),
+        });
+      } catch {
+        // silent
+      }
+    }
     setCurrentStealAlert(null);
-  }, []);
+  }, [currentStealAlert, token]);
 
   const pollForChanges = useCallback(async () => {
     if (!token || !user) return;

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StealAlert } from "@/types";
 
@@ -10,11 +9,6 @@ interface StealAlertOverlayProps {
 }
 
 export default function StealAlertOverlay({ alert, onDismiss }: StealAlertOverlayProps) {
-  useEffect(() => {
-    const timer = setTimeout(onDismiss, 5000);
-    return () => clearTimeout(timer);
-  }, [onDismiss]);
-
   return (
     <AnimatePresence>
       <motion.div
@@ -22,7 +16,6 @@ export default function StealAlertOverlay({ alert, onDismiss }: StealAlertOverla
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[100] flex items-center justify-center bg-red-900/60 backdrop-blur-md px-4"
-        onClick={onDismiss}
       >
         <motion.div
           initial={{ scale: 0.3, opacity: 0, rotate: -10 }}
@@ -65,13 +58,14 @@ export default function StealAlertOverlay({ alert, onDismiss }: StealAlertOverla
             </motion.p>
           </motion.div>
 
-          <motion.p
+          <motion.button
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { delay: 1 } }}
-            className="text-sm text-white/50"
+            animate={{ opacity: 1, transition: { delay: 1.2 } }}
+            onClick={onDismiss}
+            className="mt-6 px-8 py-3 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-lg hover:bg-white/20 transition-colors"
           >
-            Tap pour fermer
-          </motion.p>
+            OK
+          </motion.button>
         </motion.div>
       </motion.div>
     </AnimatePresence>

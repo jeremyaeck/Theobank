@@ -23,6 +23,10 @@ export default function AdminPage() {
   const [modalAmount, setModalAmount] = useState(10);
   const [modalReason, setModalReason] = useState("");
   const [acting, setActing] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [bulkAmount, setBulkAmount] = useState(10);
+  const [bulkReason, setBulkReason] = useState("");
+  const [bulkActing, setBulkActing] = useState(false);
 
   const fetchData = () => {
     if (!token) return;
@@ -44,6 +48,11 @@ export default function AdminPage() {
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const userIdSet = new Set(users.map((u) => u.id));
+    setSelectedUserIds((prev) => prev.filter((id) => userIdSet.has(id)));
+  }, [users]);
 
   const handleCreditDebit = async (amount: number) => {
     if (!modalUser) return;
@@ -87,6 +96,61 @@ export default function AdminPage() {
       fetchData();
     } catch {
       addToast("Erreur de réinitialisation", "error");
+    }
+  };
+
+  const approvedUsers = users.filter((u) => u.approved);
+
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const toggleSelectAllApproved = () => {
+    if (selectedUserIds.length === approvedUsers.length) {
+      setSelectedUserIds([]);
+      return;
+    }
+    setSelectedUserIds(approvedUsers.map((u) => u.id));
+  };
+
+  const handleBulkCredit = async () => {
+    if (selectedUserIds.length === 0) {
+      addToast("Sélectionnez au moins un joueur", "error");
+      return;
+    }
+    if (bulkAmount <= 0) {
+      addToast("Le montant doit être supérieur à 0", "error");
+      return;
+    }
+
+    setBulkActing(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userIds: selectedUserIds,
+          amount: bulkAmount,
+          reason: bulkReason || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      addToast(`${data.count} joueur(s) crédité(s) de ${bulkAmount} T$`, "success");
+      setSelectedUserIds([]);
+      setBulkAmount(10);
+      setBulkReason("");
+      fetchData();
+    } catch (err: any) {
+      addToast(err.message || "Erreur", "error");
+    } finally {
+      setBulkActing(false);
     }
   };
 
@@ -167,6 +231,57 @@ export default function AdminPage() {
           {/* Players tab */}
           {tab === "players" && (
             <div className="space-y-2">
+              <div className="glass p-4 space-y-3 mb-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-white/80">
+                    Envoi groupé Banque
+                  </p>
+                  <button
+                    onClick={toggleSelectAllApproved}
+                    disabled={approvedUsers.length === 0}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+                  >
+                    {selectedUserIds.length === approvedUsers.length
+                      ? "Tout désélectionner"
+                      : "Tout sélectionner"}
+                  </button>
+                </div>
+                <p className="text-xs text-white/50">
+                  {selectedUserIds.length} joueur(s) sélectionné(s)
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-white/60">Montant unique</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={bulkAmount}
+                      onChange={(e) => setBulkAmount(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500/50 mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-white/60">Raison (optionnel)</label>
+                    <input
+                      type="text"
+                      value={bulkReason}
+                      onChange={(e) => setBulkReason(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500/50 mt-1"
+                      placeholder="Ex: Prime d'équipe"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleBulkCredit}
+                  disabled={bulkActing || selectedUserIds.length === 0 || bulkAmount <= 0}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-bold hover:opacity-90 disabled:opacity-50"
+                >
+                  Envoyer {bulkAmount} T$ à la sélection
+                </button>
+              </div>
+
               {loading ? (
                 <div className="animate-pulse space-y-2">
                   {[1, 2, 3].map((i) => (
@@ -201,6 +316,13 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.includes(u.id)}
+                        onChange={() => toggleUserSelection(u.id)}
+                        disabled={!u.approved}
+                        className="w-4 h-4 rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/40 disabled:opacity-40"
+                      />
                       <span className="text-lg font-bold text-cyan-400">{u.balance} T$</span>
                       {!u.approved ? (
                         <button

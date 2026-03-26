@@ -8,7 +8,7 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { getInitials, getAvatarColor, formatTD } from "@/lib/utils";
-import type { User, Duel, AuctionPhase } from "@/types";
+import type { User, Duel, AuctionPhase, Team } from "@/types";
 
 export default function AdminPage() {
   const { token } = useAuth();
@@ -16,6 +16,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [duels, setDuels] = useState<Duel[]>([]);
   const [auctionPhases, setAuctionPhases] = useState<AuctionPhase[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState("");
   const [tab, setTab] = useState<"players" | "duels" | "auctions">("players");
   const [loading, setLoading] = useState(true);
 
@@ -35,11 +37,13 @@ export default function AdminPage() {
       fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
       fetch("/api/admin/duels", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
       fetch("/api/auctions", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+      fetch("/api/admin/teams", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
     ])
-      .then(([uData, dData, aData]) => {
+      .then(([uData, dData, aData, tData]) => {
         setUsers(uData.users || []);
         setDuels(dData.duels || []);
         setAuctionPhases(aData.phases || []);
+        setTeams(tData.teams || []);
       })
       .finally(() => setLoading(false));
   };
@@ -86,6 +90,7 @@ export default function AdminPage() {
   };
 
   const approvedUsers = users.filter((u) => u.approved);
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId);
 
   const toggleUserSelection = (userId: string) => {
     setSelectedUserIds((prev) =>
@@ -138,6 +143,17 @@ export default function AdminPage() {
     } finally {
       setBulkActing(false);
     }
+  };
+
+  const applyTeamSelection = () => {
+    if (!selectedTeam) {
+      addToast("Choisissez une équipe", "error");
+      return;
+    }
+    const approvedSet = new Set(approvedUsers.map((u) => u.id));
+    const teamMemberIds = selectedTeam.members.map((m) => m.id).filter((id) => approvedSet.has(id));
+    setSelectedUserIds(teamMemberIds);
+    addToast(`${selectedTeam.name} appliquée (${teamMemberIds.length} joueur(s))`, "success");
   };
 
   const totalBalance = users.reduce((s, u) => s + u.balance, 0);
@@ -235,6 +251,28 @@ export default function AdminPage() {
                 <p className="text-xs text-white/50">
                   {selectedUserIds.length} joueur(s) sélectionné(s)
                 </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                  <select
+                    value={selectedTeamId}
+                    onChange={(e) => setSelectedTeamId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500/50"
+                  >
+                    <option value="">Choisir une équipe...</option>
+                    {teams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name} ({team.members.length})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={applyTeamSelection}
+                    disabled={!selectedTeamId}
+                    className="px-3 py-2 rounded-xl text-sm bg-orange-500/15 border border-orange-500/30 text-orange-300 hover:bg-orange-500/25 disabled:opacity-50"
+                  >
+                    Appliquer équipe
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>

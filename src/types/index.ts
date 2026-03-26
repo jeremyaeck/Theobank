@@ -20,6 +20,14 @@ export interface User {
   createdAt: string;
 }
 
+export interface Team {
+  id: string;
+  name: string;
+  members: User[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Duel {
   id: string;
   challengerId: string;

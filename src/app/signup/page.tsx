@@ -57,6 +57,10 @@ export default function SignupPage() {
             </div>
           )}
 
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-2 text-sm text-amber-200">
+            Pour faciliter la tâche du banquier, merci d&apos;utiliser votre vrai prénom + la première lettre de votre nom de famille pour votre pseudo 😇
+          </div>
+
           <div>
             <label className="block text-sm text-white/60 mb-1">Nom d&apos;utilisateur</label>
             <input

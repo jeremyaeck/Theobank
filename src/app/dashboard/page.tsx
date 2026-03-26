@@ -64,6 +64,22 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28 }}
+        >
+          <a
+            href="https://theodollars.elevate.how/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 text-white text-center font-bold hover:scale-[1.01] active:scale-[0.99] transition-all shadow-lg shadow-violet-500/25 border border-white/10"
+          >
+            <span className="text-xl mr-2">📸</span>
+            <span className="text-base">Créer un souvenir</span>
+          </a>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
           <ActiveDuels />

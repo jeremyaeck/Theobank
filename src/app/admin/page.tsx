@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import AuthGuard from "@/components/layout/AuthGuard";
@@ -81,21 +82,6 @@ export default function AdminPage() {
       addToast(err.message || "Erreur", "error");
     } finally {
       setActing(false);
-    }
-  };
-
-  const handleReset = async () => {
-    if (!confirm("Réinitialiser TOUS les soldes à 50 T$ et annuler les duels actifs ?")) return;
-    try {
-      const res = await fetch("/api/admin/reset", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Erreur");
-      addToast("Tous les soldes ont été réinitialisés", "success");
-      fetchData();
-    } catch {
-      addToast("Erreur de réinitialisation", "error");
     }
   };
 
@@ -220,12 +206,12 @@ export default function AdminPage() {
             >
               Enchères
             </button>
-            <button
-              onClick={handleReset}
-              className="ml-auto px-4 py-2 rounded-lg text-sm font-medium bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 transition-all"
+            <Link
+              href="/admin/settings"
+              className="ml-auto px-4 py-2 rounded-lg text-sm font-medium bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 transition-all"
             >
-              Reset tout
-            </button>
+              Settings
+            </Link>
           </div>
 
           {/* Players tab */}

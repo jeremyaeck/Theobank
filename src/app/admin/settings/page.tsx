@@ -29,13 +29,20 @@ export default function AdminSettingsPage() {
   const fetchData = () => {
     if (!token) return;
     setLoading(true);
-    Promise.all([
-      fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
-      fetch("/api/admin/teams", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+    Promise.allSettled([
+      fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/admin/teams", { headers: { Authorization: `Bearer ${token}` } }),
     ])
-      .then(([uData, tData]) => {
-        setUsers(uData.users || []);
-        setTeams(tData.teams || []);
+      .then(async ([usersRes, teamsRes]) => {
+        if (usersRes.status === "fulfilled" && usersRes.value.ok) {
+          const uData = await usersRes.value.json();
+          setUsers(uData.users || []);
+        }
+
+        if (teamsRes.status === "fulfilled" && teamsRes.value.ok) {
+          const tData = await teamsRes.value.json();
+          setTeams(tData.teams || []);
+        }
       })
       .finally(() => setLoading(false));
   };

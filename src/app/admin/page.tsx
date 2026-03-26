@@ -33,17 +33,32 @@ export default function AdminPage() {
 
   const fetchData = () => {
     if (!token) return;
-    Promise.all([
-      fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
-      fetch("/api/admin/duels", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
-      fetch("/api/auctions", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
-      fetch("/api/admin/teams", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+    Promise.allSettled([
+      fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/admin/duels", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/auctions", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/admin/teams", { headers: { Authorization: `Bearer ${token}` } }),
     ])
-      .then(([uData, dData, aData, tData]) => {
-        setUsers(uData.users || []);
-        setDuels(dData.duels || []);
-        setAuctionPhases(aData.phases || []);
-        setTeams(tData.teams || []);
+      .then(async ([usersRes, duelsRes, auctionsRes, teamsRes]) => {
+        if (usersRes.status === "fulfilled" && usersRes.value.ok) {
+          const uData = await usersRes.value.json();
+          setUsers(uData.users || []);
+        }
+
+        if (duelsRes.status === "fulfilled" && duelsRes.value.ok) {
+          const dData = await duelsRes.value.json();
+          setDuels(dData.duels || []);
+        }
+
+        if (auctionsRes.status === "fulfilled" && auctionsRes.value.ok) {
+          const aData = await auctionsRes.value.json();
+          setAuctionPhases(aData.phases || []);
+        }
+
+        if (teamsRes.status === "fulfilled" && teamsRes.value.ok) {
+          const tData = await teamsRes.value.json();
+          setTeams(tData.teams || []);
+        }
       })
       .finally(() => setLoading(false));
   };

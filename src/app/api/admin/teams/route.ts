@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { getAuthUser, unauthorized, forbidden } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 
@@ -46,6 +47,13 @@ async function assertAdmin(req: NextRequest) {
   return { ok: true as const };
 }
 
+function isMissingTeamsTablesError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2021"
+  );
+}
+
 const createSchema = z.object({
   action: z.literal("create"),
   name: z.string().trim().min(2).max(40),
@@ -72,8 +80,20 @@ export async function GET(req: NextRequest) {
   const auth = await assertAdmin(req);
   if (!auth.ok) return auth.response;
 
-  const teams = await getTeams();
-  return NextResponse.json({ teams });
+  try {
+    const teams = await getTeams();
+    return NextResponse.json({ teams });
+  } catch (e) {
+    if (isMissingTeamsTablesError(e)) {
+      return NextResponse.json({
+        teams: [],
+        teamsFeatureDisabled: true,
+        message: "Les tables d'équipes ne sont pas encore migrées",
+      });
+    }
+    console.error("Admin teams GET error:", e);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -141,6 +161,12 @@ export async function POST(req: NextRequest) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: "Données invalides" }, { status: 400 });
     }
+    if (isMissingTeamsTablesError(e)) {
+      return NextResponse.json(
+        { error: "Tables équipes manquantes. Lancez la migration Prisma." },
+        { status: 503 }
+      );
+    }
     console.error("Admin teams POST error:", e);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
@@ -197,6 +223,12 @@ export async function PATCH(req: NextRequest) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: "Données invalides" }, { status: 400 });
     }
+    if (isMissingTeamsTablesError(e)) {
+      return NextResponse.json(
+        { error: "Tables équipes manquantes. Lancez la migration Prisma." },
+        { status: 503 }
+      );
+    }
     console.error("Admin teams PATCH error:", e);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
@@ -213,6 +245,12 @@ export async function DELETE(req: NextRequest) {
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: "Données invalides" }, { status: 400 });
+    }
+    if (isMissingTeamsTablesError(e)) {
+      return NextResponse.json(
+        { error: "Tables équipes manquantes. Lancez la migration Prisma." },
+        { status: 503 }
+      );
     }
     console.error("Admin teams DELETE error:", e);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

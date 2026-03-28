@@ -9,7 +9,8 @@ export type TransactionType =
   | "ADMIN_RESET"
   | "AUCTION_BID"
   | "BONUS_STEAL_GAIN"
-  | "BONUS_STEAL_LOSS";
+  | "BONUS_STEAL_LOSS"
+  | "BONUS_JACKPOT";
 
 export interface User {
   id: string;
@@ -60,7 +61,7 @@ export interface AuthPayload {
   isAdmin: boolean;
 }
 
-export type BonusType = "CLASSEMENT" | "SOLDE_MAX" | "SOLDE_MOYEN" | "GAIN_DOUBLE" | "VOL";
+export type BonusType = "CLASSEMENT" | "SOLDE_MAX" | "SOLDE_MOYEN" | "GAIN_DOUBLE" | "VOL" | "BOUCLIER" | "JACKPOT";
 
 export interface BonusUsage {
   id: string;

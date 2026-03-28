@@ -42,6 +42,7 @@ export default function BonusesPage() {
   } | null>(null);
   const [showStealPicker, setShowStealPicker] = useState(false);
   const [activeGainDouble, setActiveGainDouble] = useState<string | null>(null);
+  const [activeBouclier, setActiveBouclier] = useState<string | null>(null);
 
   const fetchBonuses = useCallback(async () => {
     if (!token) return;
@@ -55,7 +56,7 @@ export default function BonusesPage() {
         setCooldownEndsAt(data.cooldownEndsAt || null);
         setAuctionActive(data.auctionActive || false);
 
-        // Check for active Gain Double
+        // Check for active timed bonuses
         const gainDouble = (data.bonuses || []).find(
           (b: BonusState) =>
             b.type === "GAIN_DOUBLE" &&
@@ -63,6 +64,14 @@ export default function BonusesPage() {
             new Date(b.usage.expiresAt) > new Date()
         );
         setActiveGainDouble(gainDouble?.usage?.expiresAt || null);
+
+        const bouclier = (data.bonuses || []).find(
+          (b: BonusState) =>
+            b.type === "BOUCLIER" &&
+            b.usage?.expiresAt &&
+            new Date(b.usage.expiresAt) > new Date()
+        );
+        setActiveBouclier(bouclier?.usage?.expiresAt || null);
       }
     } catch {
       // silent
@@ -102,8 +111,17 @@ export default function BonusesPage() {
       if (type === "GAIN_DOUBLE") {
         addToast("✨ Gain x2 activé pour 5 minutes !", "success");
         setActiveGainDouble(data.bonus.expiresAt);
+      } else if (type === "BOUCLIER") {
+        addToast("🛡️ Bouclier activé pendant 5 minutes !", "success");
+        setActiveBouclier(data.bonus.expiresAt);
+      } else if (type === "JACKPOT") {
+        refreshUser();
+        setShowResultOverlay({
+          bonusType: type,
+          data: data.bonus.data,
+          expiresAt: data.bonus.expiresAt,
+        });
       } else {
-        // Show result overlay for info bonuses
         setShowResultOverlay({
           bonusType: type,
           data: data.bonus.data,
@@ -168,7 +186,12 @@ export default function BonusesPage() {
     <AuthGuard>
       <Navbar />
 
-      {activeGainDouble && <ActiveBonusIndicator expiresAt={activeGainDouble} />}
+      {activeGainDouble && (
+        <ActiveBonusIndicator expiresAt={activeGainDouble} label="✨ Gain x2" gradient="from-purple-600 to-pink-600" />
+      )}
+      {activeBouclier && (
+        <ActiveBonusIndicator expiresAt={activeBouclier} label="🛡️ Bouclier" gradient="from-blue-600 to-cyan-600" />
+      )}
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>

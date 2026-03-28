@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, unauthorized } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 
-const BONUS_TYPES = ["CLASSEMENT", "SOLDE_MAX", "SOLDE_MOYEN", "GAIN_DOUBLE", "VOL"] as const;
+const BONUS_TYPES = ["GAIN_DOUBLE", "VOL", "BOUCLIER", "JACKPOT"] as const;
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutes
 
 export async function GET(req: NextRequest) {

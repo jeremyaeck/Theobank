@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutes
 
 const useSchema = z.object({
-  bonusType: z.enum(["CLASSEMENT", "SOLDE_MAX", "SOLDE_MOYEN", "GAIN_DOUBLE", "VOL"]),
+  bonusType: z.enum(["GAIN_DOUBLE", "VOL", "BOUCLIER", "JACKPOT"]),
   victimId: z.string().optional(),
 });
 
@@ -64,20 +64,12 @@ export async function POST(req: NextRequest) {
 
     // Execute bonus based on type
     switch (bonusType) {
-      case "CLASSEMENT": {
-        const players = await prisma.user.findMany({
-          where: { isAdmin: false },
-          orderBy: { balance: "desc" },
-          select: { username: true },
-        });
-        const ranking = players.map((p, i) => ({ rank: i + 1, username: p.username }));
-
+      case "BOUCLIER": {
         const usage = await prisma.bonusUsage.create({
           data: {
             userId: user.id,
-            bonusType: "CLASSEMENT",
-            expiresAt: new Date(now.getTime() + 30 * 1000),
-            data: ranking,
+            bonusType: "BOUCLIER",
+            expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
           },
         });
 
@@ -87,24 +79,41 @@ export async function POST(req: NextRequest) {
             bonusType: usage.bonusType,
             usedAt: usage.usedAt.toISOString(),
             expiresAt: usage.expiresAt?.toISOString(),
-            data: ranking,
+            data: null,
           },
         });
       }
 
-      case "SOLDE_MAX": {
-        const result = await prisma.user.aggregate({
-          where: { isAdmin: false },
-          _max: { balance: true },
+      case "JACKPOT": {
+        const currentUser = await prisma.user.findUnique({ where: { id: user.id } });
+        const balance = currentUser?.balance || 0;
+
+        // Random between -15% and +30%
+        const percentage = Math.random() * 0.45 - 0.15;
+        const amount = Math.floor(balance * percentage);
+        const finalAmount = percentage < 0 ? Math.max(amount, -balance) : amount;
+
+        await prisma.$transaction(async (tx) => {
+          await tx.user.update({
+            where: { id: user.id },
+            data: { balance: { increment: finalAmount } },
+          });
+          await tx.transaction.create({
+            data: {
+              userId: user.id,
+              amount: finalAmount,
+              type: "BONUS_JACKPOT",
+              description: `Jackpot (${finalAmount >= 0 ? "+" : ""}${Math.round(percentage * 100)}%)`,
+            },
+          });
         });
-        const maxBalance = result._max.balance || 0;
 
         const usage = await prisma.bonusUsage.create({
           data: {
             userId: user.id,
-            bonusType: "SOLDE_MAX",
-            expiresAt: new Date(now.getTime() + 30 * 1000),
-            data: { maxBalance },
+            bonusType: "JACKPOT",
+            expiresAt: new Date(now.getTime() + 10 * 1000),
+            data: { amount: finalAmount, percentage: Math.round(percentage * 100) },
           },
         });
 
@@ -114,34 +123,7 @@ export async function POST(req: NextRequest) {
             bonusType: usage.bonusType,
             usedAt: usage.usedAt.toISOString(),
             expiresAt: usage.expiresAt?.toISOString(),
-            data: { maxBalance },
-          },
-        });
-      }
-
-      case "SOLDE_MOYEN": {
-        const result = await prisma.user.aggregate({
-          where: { isAdmin: false },
-          _avg: { balance: true },
-        });
-        const averageBalance = Math.round(result._avg.balance || 0);
-
-        const usage = await prisma.bonusUsage.create({
-          data: {
-            userId: user.id,
-            bonusType: "SOLDE_MOYEN",
-            expiresAt: new Date(now.getTime() + 30 * 1000),
-            data: { averageBalance },
-          },
-        });
-
-        return NextResponse.json({
-          bonus: {
-            id: usage.id,
-            bonusType: usage.bonusType,
-            usedAt: usage.usedAt.toISOString(),
-            expiresAt: usage.expiresAt?.toISOString(),
-            data: { averageBalance },
+            data: { amount: finalAmount, percentage: Math.round(percentage * 100) },
           },
         });
       }
@@ -178,6 +160,18 @@ export async function POST(req: NextRequest) {
           const victim = await tx.user.findUnique({ where: { id: victimId } });
           if (!victim || victim.isAdmin) {
             throw new Error("Joueur introuvable");
+          }
+
+          // Check if victim has an active shield
+          const shield = await tx.bonusUsage.findFirst({
+            where: {
+              userId: victimId,
+              bonusType: "BOUCLIER",
+              expiresAt: { gt: now },
+            },
+          });
+          if (shield) {
+            throw new Error("Ce joueur est protégé par un bouclier !");
           }
 
           const stolenAmount = Math.floor(victim.balance * 0.05);

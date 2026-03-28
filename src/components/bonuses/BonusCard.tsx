@@ -12,28 +12,10 @@ interface BonusCardProps {
   index: number;
 }
 
-const BONUS_CONFIG: Record<
+const BONUS_CONFIG: Partial<Record<
   BonusType,
   { icon: string; name: string; description: string; gradient: string }
-> = {
-  CLASSEMENT: {
-    icon: "🏅",
-    name: "Classement",
-    description: "Voir le classement des joueurs pendant 30s",
-    gradient: "from-yellow-600 to-amber-600",
-  },
-  SOLDE_MAX: {
-    icon: "💎",
-    name: "Solde Max",
-    description: "Voir le solde le plus élevé pendant 30s",
-    gradient: "from-blue-600 to-cyan-600",
-  },
-  SOLDE_MOYEN: {
-    icon: "📊",
-    name: "Solde Moyen",
-    description: "Voir le solde moyen pendant 30s",
-    gradient: "from-green-600 to-emerald-600",
-  },
+>> = {
   GAIN_DOUBLE: {
     icon: "✨",
     name: "Gain x2",
@@ -46,6 +28,18 @@ const BONUS_CONFIG: Record<
     description: "Voler 5% du solde d'un joueur",
     gradient: "from-red-600 to-rose-600",
   },
+  BOUCLIER: {
+    icon: "🛡️",
+    name: "Bouclier",
+    description: "Immunité contre le vol pendant 5 min",
+    gradient: "from-blue-600 to-cyan-600",
+  },
+  JACKPOT: {
+    icon: "🎰",
+    name: "Jackpot",
+    description: "Gagner ou perdre entre -15% et +30% de ton solde",
+    gradient: "from-yellow-600 to-orange-600",
+  },
 };
 
 export default function BonusCard({
@@ -57,6 +51,7 @@ export default function BonusCard({
   index,
 }: BonusCardProps) {
   const config = BONUS_CONFIG[type];
+  if (!config) return null;
   const disabled = used || cooldownActive || auctionActive;
 
   return (

@@ -95,6 +95,7 @@ enum TransactionType {
   AUCTION_BID
   BONUS_STEAL_GAIN
   BONUS_STEAL_LOSS
+  BONUS_JACKPOT
 }
 
 model Transaction {
@@ -158,6 +159,8 @@ enum BonusType {
   SOLDE_MOYEN
   GAIN_DOUBLE
   VOL
+  BOUCLIER
+  JACKPOT
 }
 
 model BonusUsage {

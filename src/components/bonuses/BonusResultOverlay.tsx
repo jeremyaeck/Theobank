@@ -113,6 +113,21 @@ export default function BonusResultOverlay({
             </div>
           )}
 
+          {bonusType === "JACKPOT" && (
+            <div className="text-center space-y-3">
+              <h3 className="text-lg font-bold text-white/90">🎰 Jackpot !</h3>
+              <p className={`text-5xl font-bold ${data.amount >= 0 ? "text-green-400" : "text-red-400"}`}>
+                {data.amount >= 0 ? "+" : ""}{data.amount} T$
+              </p>
+              <p className="text-sm text-white/50">
+                {data.percentage >= 0 ? "+" : ""}{data.percentage}% de votre solde
+              </p>
+              <p className="text-xs text-white/30">
+                {data.amount >= 0 ? "Vous avez de la chance !" : "Pas de chance cette fois..."}
+              </p>
+            </div>
+          )}
+
           <button
             onClick={onClose}
             className="w-full py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm hover:bg-white/10 transition-colors"

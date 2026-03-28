@@ -12,6 +12,12 @@ export default function CountdownTimer({ endsAt, serverTimeOffset = 0, onExpired
   const [timeLeft, setTimeLeft] = useState(getTimeLeft(endsAt, serverTimeOffset));
 
   useEffect(() => {
+    const remaining = getTimeLeft(endsAt, serverTimeOffset);
+    setTimeLeft(remaining);
+    if (remaining.total <= 0) {
+      onExpired?.();
+      return;
+    }
     const interval = setInterval(() => {
       const remaining = getTimeLeft(endsAt, serverTimeOffset);
       setTimeLeft(remaining);
@@ -23,7 +29,7 @@ export default function CountdownTimer({ endsAt, serverTimeOffset = 0, onExpired
     return () => clearInterval(interval);
   }, [endsAt, serverTimeOffset, onExpired]);
 
-  const isUrgent = timeLeft.total <= 60000 && timeLeft.total > 0;
+  const isUrgent = timeLeft.total < 60000 && timeLeft.total > 0;
   const isExpired = timeLeft.total <= 0;
 
   if (isExpired) {

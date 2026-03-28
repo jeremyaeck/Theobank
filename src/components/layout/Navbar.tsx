@@ -10,7 +10,7 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav className="glass sticky top-0 z-40 mx-4 mt-4 px-4 py-3 flex items-center justify-between">
+    <nav className="glass sticky top-4 z-40 mx-4 mt-4 px-4 py-3 flex items-center justify-between">
       <Link href={user.isAdmin ? "/admin" : "/dashboard"} className="flex items-center gap-2">
         <span className="text-2xl font-bold gradient-text">T$</span>
         <span className="text-sm text-white/60 hidden sm:inline">Theobank</span>

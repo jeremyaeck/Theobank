@@ -5,16 +5,24 @@ import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastContext";
 import type { StealAlert } from "@/types";
 
+interface TeamInfo {
+  id: string;
+  name: string;
+  members: { id: string; username: string }[];
+}
+
 interface PollingContextType {
   refresh: () => void;
   currentStealAlert: StealAlert | null;
   dismissStealAlert: () => void;
+  currentTeam: TeamInfo | null;
 }
 
 const SocketContext = createContext<PollingContextType>({
   refresh: () => {},
   currentStealAlert: null,
   dismissStealAlert: () => {},
+  currentTeam: null,
 });
 
 export function useSocket() {
@@ -30,6 +38,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const lastTeamNameRef = useRef<string | null>(null);
   const seenStealAlertIds = useRef<Set<string>>(new Set());
   const [currentStealAlert, setCurrentStealAlert] = useState<StealAlert | null>(null);
+  const [currentTeam, setCurrentTeam] = useState<TeamInfo | null>(null);
 
   const dismissStealAlert = useCallback(async () => {
     if (currentStealAlert && token) {
@@ -83,17 +92,24 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         const newTeamId: string | null = meData.team?.id ?? null;
         const newTeamName: string | null = meData.team?.name ?? null;
         if (lastTeamIdRef.current !== undefined) {
-          // Already initialized — check for change
-          if (newTeamId !== lastTeamIdRef.current || newTeamName !== lastTeamNameRef.current) {
-            if (newTeamId && newTeamName) {
-              addToast(`🏆 Tu rejoins l'équipe ${newTeamName} !`, "success");
-            } else if (!newTeamId && lastTeamIdRef.current) {
+          const teamIdChanged = newTeamId !== lastTeamIdRef.current;
+          const teamNameChanged = newTeamName !== lastTeamNameRef.current;
+
+          if (teamIdChanged || teamNameChanged) {
+            if (!newTeamId) {
               addToast("Tu as été retiré de ton équipe", "info");
+            } else if (teamIdChanged) {
+              // New team assignment
+              addToast(`Tu rejoins l'équipe ${newTeamName} !`, "team");
+            } else if (teamNameChanged && newTeamName) {
+              // Renamed — same team, new name
+              addToast(`Ton équipe s'appelle maintenant : ${newTeamName}`, "team");
             }
           }
         }
         lastTeamIdRef.current = newTeamId;
         lastTeamNameRef.current = newTeamName;
+        setCurrentTeam(meData.team ?? null);
 
         // Check for new steal alerts
         const alerts: StealAlert[] = meData.stealAlerts || [];
@@ -156,7 +172,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, [pollForChanges, refreshUser]);
 
   return (
-    <SocketContext.Provider value={{ refresh, currentStealAlert, dismissStealAlert }}>
+    <SocketContext.Provider value={{ refresh, currentStealAlert, dismissStealAlert, currentTeam }}>
       {children}
     </SocketContext.Provider>
   );

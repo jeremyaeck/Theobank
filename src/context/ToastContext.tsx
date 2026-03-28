@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 interface Toast {
   id: string;
   message: string;
-  type: "success" | "error" | "info" | "duel";
+  type: "success" | "error" | "info" | "duel" | "team";
 }
 
 interface ToastContextType {
@@ -24,6 +24,7 @@ const ICONS: Record<Toast["type"], string> = {
   error: "✗",
   info: "ℹ",
   duel: "⚔️",
+  team: "🏆",
 };
 
 const COLORS: Record<Toast["type"], string> = {
@@ -31,6 +32,15 @@ const COLORS: Record<Toast["type"], string> = {
   error: "border-red-500/50 bg-red-500/10",
   info: "border-cyan-500/50 bg-cyan-500/10",
   duel: "border-purple-500/50 bg-purple-500/10",
+  team: "border-amber-400/70 bg-gradient-to-r from-amber-500/20 to-yellow-500/10",
+};
+
+const DURATIONS: Record<Toast["type"], number> = {
+  success: 4000,
+  error: 4000,
+  info: 4000,
+  duel: 4000,
+  team: 8000,
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -41,7 +51,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, DURATIONS[type]);
   }, []);
 
   return (
@@ -55,10 +65,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               initial={{ opacity: 0, x: 100, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 100, scale: 0.9 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-xl ${COLORS[toast.type]}`}
+              className={`flex items-center gap-3 px-4 backdrop-blur-xl border rounded-xl ${COLORS[toast.type]} ${
+                toast.type === "team" ? "py-4 shadow-lg shadow-amber-500/20" : "py-3"
+              }`}
             >
-              <span className="text-lg">{ICONS[toast.type]}</span>
-              <span className="text-sm text-white/90">{toast.message}</span>
+              <span className={toast.type === "team" ? "text-2xl" : "text-lg"}>
+                {ICONS[toast.type]}
+              </span>
+              <span className={`text-white/90 ${toast.type === "team" ? "text-base font-semibold" : "text-sm"}`}>
+                {toast.message}
+              </span>
             </motion.div>
           ))}
         </AnimatePresence>

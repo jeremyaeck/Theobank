@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import BalanceDisplay from "@/components/dashboard/BalanceDisplay";
@@ -11,7 +12,20 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const [gameOver, setGameOver] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch("/api/auctions", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        const phases = d.phases || [];
+        const phase4 = phases.find((p: any) => p.phase === 4);
+        setGameOver(phase4?.status === "FINISHED");
+      })
+      .catch(() => {});
+  }, [token]);
 
   return (
     <AuthGuard>
@@ -25,6 +39,22 @@ export default function DashboardPage() {
           <BalanceDisplay balance={user?.balance || 0} />
         </motion.div>
 
+        {gameOver && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.15 }}
+          >
+            <Link
+              href="/stats"
+              className="block w-full py-5 rounded-2xl bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-500 text-white text-center font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-yellow-500/30 border border-white/20"
+            >
+              <span className="text-2xl block mb-1">🏆</span>
+              <span className="text-base">Voir les statistiques de la soirée</span>
+            </Link>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -33,7 +63,9 @@ export default function DashboardPage() {
           <div className="flex gap-3">
             <Link
               href="/duels/new"
-              className="flex-1 py-5 rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-cyan-600 text-white text-center font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-purple-500/25 border border-white/10"
+              className={`flex-1 py-5 rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-cyan-600 text-white text-center font-bold transition-all shadow-lg shadow-purple-500/25 border border-white/10 ${
+                gameOver ? "opacity-40 pointer-events-none" : "hover:scale-[1.02] active:scale-[0.98]"
+              }`}
             >
               <span className="text-2xl block mb-1">⚔️</span>
               <span className="text-base">Défier</span>
@@ -55,7 +87,9 @@ export default function DashboardPage() {
         >
           <Link
             href="/bonuses"
-            className="block w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white text-center font-bold hover:scale-[1.01] active:scale-[0.99] transition-all shadow-lg shadow-emerald-500/25 border border-white/10"
+            className={`block w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white text-center font-bold transition-all shadow-lg shadow-emerald-500/25 border border-white/10 ${
+              gameOver ? "opacity-40 pointer-events-none" : "hover:scale-[1.01] active:scale-[0.99]"
+            }`}
           >
             <span className="text-xl mr-2">🎁</span>
             <span className="text-base">Bonus</span>

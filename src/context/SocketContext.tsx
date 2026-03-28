@@ -73,16 +73,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
         if (lastBalanceRef.current !== null && newBalance !== lastBalanceRef.current) {
           const diff = newBalance - lastBalanceRef.current;
-          if (diff > 0) {
+          if (diff > 0 && !user.isAdmin) {
             addToast(`+${diff} T$ reçus !`, "success");
-          } else {
-            // Don't show generic toast if it's a steal (the overlay handles it)
-            const hasNewSteal = (meData.stealAlerts || []).some(
-              (a: StealAlert) => !seenStealAlertIds.current.has(a.id)
-            );
-            if (!hasNewSteal) {
-              addToast(`${diff} T$`, "info");
-            }
           }
           refreshUser();
         }

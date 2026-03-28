@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Vous ne pouvez pas vous défier vous-même" }, { status: 400 });
     }
 
+    // Check game over (phase 4 finished)
+    const phase4 = await prisma.auctionPhase.findFirst({ where: { phase: 4 } });
+    if (phase4?.status === "FINISHED") {
+      return NextResponse.json({ error: "La partie est terminée — les duels ne sont plus disponibles" }, { status: 400 });
+    }
+
     if (betAmount > user.balance) {
       return NextResponse.json({ error: "Solde insuffisant" }, { status: 400 });
     }

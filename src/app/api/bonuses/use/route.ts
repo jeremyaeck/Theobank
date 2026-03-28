@@ -21,6 +21,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { bonusType, victimId } = useSchema.parse(body);
 
+    // Check game over (phase 4 finished)
+    const phase4 = await prisma.auctionPhase.findFirst({ where: { phase: 4 } });
+    if (phase4?.status === "FINISHED") {
+      return NextResponse.json({ error: "La partie est terminée — les bonus ne sont plus disponibles" }, { status: 400 });
+    }
+
     // Check active auction
     const activeAuction = await prisma.auctionPhase.findFirst({
       where: { status: "ACTIVE" },

@@ -61,7 +61,26 @@ export interface AuthPayload {
   isAdmin: boolean;
 }
 
-export type BonusType = "CLASSEMENT" | "SOLDE_MAX" | "SOLDE_MOYEN" | "GAIN_DOUBLE" | "VOL" | "BOUCLIER" | "JACKPOT";
+export type BonusType = "CLASSEMENT" | "SOLDE_MAX" | "SOLDE_MOYEN" | "GAIN_DOUBLE" | "VOL" | "BOUCLIER" | "JACKPOT" | "ROUE";
+
+export type WheelSegmentType = "JACKPOT" | "GAIN" | "VOL_RANDOM" | "PLUIE" | "RIEN" | "MALUS" | "RUINE" | "JACKPOT_INV";
+
+export interface WheelSegment {
+  type: WheelSegmentType;
+  emoji: string;
+  name: string;
+  description: string;
+  color: string;
+}
+
+export interface WheelEvent {
+  id: string;
+  spinnerUsername: string;
+  segmentIndex: number;
+  amount: number;
+  targetUsername?: string;
+  usedAt: string;
+}
 
 export interface BonusUsage {
   id: string;

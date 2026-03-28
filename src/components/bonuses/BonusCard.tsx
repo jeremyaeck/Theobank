@@ -40,6 +40,12 @@ const BONUS_CONFIG: Partial<Record<
     description: "Gagner ou perdre entre -15% et +30% de ton solde",
     gradient: "from-yellow-600 to-orange-600",
   },
+  ROUE: {
+    icon: "🎡",
+    name: "Roue du Destin",
+    description: "Tourne la roue — gain, vol, malus... tout est possible !",
+    gradient: "from-amber-500 via-rose-500 to-purple-600",
+  },
 };
 
 export default function BonusCard({

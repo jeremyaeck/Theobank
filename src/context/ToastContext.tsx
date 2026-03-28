@@ -6,11 +6,12 @@ import { AnimatePresence, motion } from "framer-motion";
 interface Toast {
   id: string;
   message: string;
-  type: "success" | "error" | "info" | "duel" | "team";
+  type: "success" | "error" | "info" | "duel" | "team" | "wheel";
+  action?: { label: string; onClick: () => void };
 }
 
 interface ToastContextType {
-  addToast: (message: string, type?: Toast["type"]) => void;
+  addToast: (message: string, type?: Toast["type"], action?: Toast["action"]) => void;
 }
 
 const ToastContext = createContext<ToastContextType>({ addToast: () => {} });
@@ -25,6 +26,7 @@ const ICONS: Record<Toast["type"], string> = {
   info: "ℹ",
   duel: "⚔️",
   team: "🏆",
+  wheel: "🎡",
 };
 
 const COLORS: Record<Toast["type"], string> = {
@@ -33,6 +35,7 @@ const COLORS: Record<Toast["type"], string> = {
   info: "border-cyan-500/50 bg-cyan-500/10",
   duel: "border-purple-500/50 bg-purple-500/10",
   team: "border-amber-400/70 bg-gradient-to-r from-amber-500/20 to-yellow-500/10",
+  wheel: "border-yellow-500/60 bg-gradient-to-r from-yellow-500/15 to-orange-500/10",
 };
 
 const DURATIONS: Record<Toast["type"], number> = {
@@ -41,17 +44,25 @@ const DURATIONS: Record<Toast["type"], number> = {
   info: 4000,
   duel: 4000,
   team: 8000,
+  wheel: 20000,
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((message: string, type: Toast["type"] = "info") => {
-    const id = Math.random().toString(36).slice(2);
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, DURATIONS[type]);
+  const addToast = useCallback(
+    (message: string, type: Toast["type"] = "info", action?: Toast["action"]) => {
+      const id = Math.random().toString(36).slice(2);
+      setToasts((prev) => [...prev, { id, message, type, action }]);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, DURATIONS[type]);
+    },
+    []
+  );
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   return (
@@ -66,15 +77,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 100, scale: 0.9 }}
               className={`flex items-center gap-3 px-4 backdrop-blur-xl border rounded-xl ${COLORS[toast.type]} ${
-                toast.type === "team" ? "py-4 shadow-lg shadow-amber-500/20" : "py-3"
+                toast.type === "team" || toast.type === "wheel" ? "py-4 shadow-lg" : "py-3"
               }`}
             >
-              <span className={toast.type === "team" ? "text-2xl" : "text-lg"}>
+              <span className={toast.type === "team" || toast.type === "wheel" ? "text-2xl" : "text-lg"}>
                 {ICONS[toast.type]}
               </span>
-              <span className={`text-white/90 ${toast.type === "team" ? "text-base font-semibold" : "text-sm"}`}>
+              <span className={`text-white/90 flex-1 ${toast.type === "team" || toast.type === "wheel" ? "text-base font-semibold" : "text-sm"}`}>
                 {toast.message}
               </span>
+              {toast.action && (
+                <button
+                  onClick={() => {
+                    toast.action!.onClick();
+                    dismissToast(toast.id);
+                  }}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-colors"
+                >
+                  {toast.action.label}
+                </button>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>

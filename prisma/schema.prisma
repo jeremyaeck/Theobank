@@ -161,6 +161,7 @@ enum BonusType {
   VOL
   BOUCLIER
   JACKPOT
+  ROUE
 }
 
 model BonusUsage {

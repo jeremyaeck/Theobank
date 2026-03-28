@@ -22,6 +22,17 @@ export async function GET(req: NextRequest) {
     orderBy: { usedAt: "desc" },
   });
 
+  // Recent wheel spins from other players (last 30s)
+  const recentWheelEvents = await prisma.bonusUsage.findMany({
+    where: {
+      bonusType: "ROUE",
+      userId: { not: user.id },
+      usedAt: { gt: new Date(Date.now() - 30000) },
+    },
+    include: { user: { select: { username: true } } },
+    orderBy: { usedAt: "desc" },
+  });
+
   // Get user's team
   const teamMember = await prisma.teamMember.findFirst({
     where: { userId: user.id },
@@ -65,6 +76,14 @@ export async function GET(req: NextRequest) {
       thiefUsername: a.user.username,
       amount: (a.data as any)?.amount || 0,
       usedAt: a.usedAt.toISOString(),
+    })),
+    wheelEvents: recentWheelEvents.map((e) => ({
+      id: e.id,
+      spinnerUsername: e.user.username,
+      segmentIndex: (e.data as any)?.segmentIndex ?? 4,
+      amount: (e.data as any)?.amount ?? 0,
+      targetUsername: (e.data as any)?.targetUsername,
+      usedAt: e.usedAt.toISOString(),
     })),
   });
 }

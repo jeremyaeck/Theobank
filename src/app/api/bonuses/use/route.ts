@@ -6,9 +6,22 @@ import { prisma } from "@/lib/prisma";
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutes
 
 const useSchema = z.object({
-  bonusType: z.enum(["GAIN_DOUBLE", "VOL", "BOUCLIER", "JACKPOT"]),
+  bonusType: z.enum(["GAIN_DOUBLE", "VOL", "BOUCLIER", "JACKPOT", "ROUE"]),
   victimId: z.string().optional(),
 });
+
+const WHEEL_WEIGHTS = [5, 20, 10, 15, 15, 20, 10, 5]; // sum = 100
+function pickWheelSegment(): number {
+  const rand = Math.random() * 100;
+  let cumulative = 0;
+  for (let i = 0; i < WHEEL_WEIGHTS.length; i++) {
+    cumulative += WHEEL_WEIGHTS[i];
+    if (rand < cumulative) return i;
+  }
+  return 4; // fallback: RIEN
+}
+
+const WHEEL_SEGMENT_TYPES = ["JACKPOT", "GAIN", "VOL_RANDOM", "PLUIE", "RIEN", "MALUS", "RUINE", "JACKPOT_INV"] as const;
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req);
@@ -124,6 +137,94 @@ export async function POST(req: NextRequest) {
             usedAt: usage.usedAt.toISOString(),
             expiresAt: usage.expiresAt?.toISOString(),
             data: { amount: finalAmount, percentage: Math.round(percentage * 100) },
+          },
+        });
+      }
+
+      case "ROUE": {
+        const segmentIndex = pickWheelSegment();
+        const segmentType = WHEEL_SEGMENT_TYPES[segmentIndex];
+        const currentUser = await prisma.user.findUnique({ where: { id: user.id } });
+        const balance = currentUser?.balance || 0;
+
+        let amount = 0;
+        let targetUsername: string | undefined;
+
+        if (segmentType === "JACKPOT") amount = Math.floor(balance * 0.40);
+        else if (segmentType === "GAIN") amount = Math.floor(balance * 0.20);
+        else if (segmentType === "PLUIE") amount = Math.floor(balance * 0.25);
+        else if (segmentType === "MALUS") amount = -Math.floor(balance * 0.15);
+        else if (segmentType === "JACKPOT_INV") amount = -Math.floor(balance * 0.35);
+        else if (segmentType === "VOL_RANDOM") {
+          const randomVictim = await prisma.user.findFirst({
+            where: { isAdmin: false, id: { not: user.id }, approved: true },
+            orderBy: { id: "asc" },
+            skip: Math.floor(Math.random() * await prisma.user.count({ where: { isAdmin: false, id: { not: user.id }, approved: true } })),
+          });
+          if (randomVictim) {
+            amount = Math.floor(randomVictim.balance * 0.10);
+            targetUsername = randomVictim.username;
+            await prisma.$transaction([
+              prisma.user.update({ where: { id: randomVictim.id }, data: { balance: { decrement: amount } } }),
+              prisma.user.update({ where: { id: user.id }, data: { balance: { increment: amount } } }),
+            ]);
+          }
+        } else if (segmentType === "RUINE") {
+          amount = -Math.floor(balance * 0.20);
+          const randomBeneficiary = await prisma.user.findFirst({
+            where: { isAdmin: false, id: { not: user.id }, approved: true },
+            orderBy: { id: "asc" },
+            skip: Math.floor(Math.random() * await prisma.user.count({ where: { isAdmin: false, id: { not: user.id }, approved: true } })),
+          });
+          if (randomBeneficiary) {
+            targetUsername = randomBeneficiary.username;
+            await prisma.$transaction([
+              prisma.user.update({ where: { id: user.id }, data: { balance: { decrement: Math.abs(amount) } } }),
+              prisma.user.update({ where: { id: randomBeneficiary.id }, data: { balance: { increment: Math.abs(amount) } } }),
+            ]);
+          }
+        }
+
+        // Apply amount for non-random cases
+        if (["JACKPOT", "GAIN", "PLUIE", "MALUS", "JACKPOT_INV"].includes(segmentType) && amount !== 0) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { balance: { increment: amount } },
+          });
+        }
+
+        if (amount !== 0) {
+          await prisma.transaction.create({
+            data: {
+              userId: user.id,
+              amount,
+              type: "BONUS_JACKPOT",
+              description: `Roue du Destin — ${segmentType}`,
+            },
+          });
+        }
+
+        const usage = await prisma.bonusUsage.create({
+          data: {
+            userId: user.id,
+            bonusType: "ROUE",
+            data: {
+              segmentIndex,
+              segmentType,
+              amount,
+              targetUsername,
+              spinnerUsername: user.username,
+            },
+          },
+        });
+
+        return NextResponse.json({
+          bonus: {
+            id: usage.id,
+            bonusType: "ROUE",
+            usedAt: usage.usedAt.toISOString(),
+            expiresAt: null,
+            data: { segmentIndex, segmentType, amount, targetUsername },
           },
         });
       }

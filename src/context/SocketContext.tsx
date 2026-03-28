@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastContext";
-import type { StealAlert } from "@/types";
+import type { StealAlert, WheelEvent } from "@/types";
 
 interface TeamInfo {
   id: string;
@@ -16,6 +16,8 @@ interface PollingContextType {
   currentStealAlert: StealAlert | null;
   dismissStealAlert: () => void;
   currentTeam: TeamInfo | null;
+  currentWheelEvent: WheelEvent | null;
+  clearWheelEvent: () => void;
 }
 
 const SocketContext = createContext<PollingContextType>({
@@ -23,6 +25,8 @@ const SocketContext = createContext<PollingContextType>({
   currentStealAlert: null,
   dismissStealAlert: () => {},
   currentTeam: null,
+  currentWheelEvent: null,
+  clearWheelEvent: () => {},
 });
 
 export function useSocket() {
@@ -37,8 +41,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const lastTeamIdRef = useRef<string | null | undefined>(undefined); // undefined = not yet initialized
   const lastTeamNameRef = useRef<string | null>(null);
   const seenStealAlertIds = useRef<Set<string>>(new Set());
+  const seenWheelEventIds = useRef<Set<string>>(new Set());
   const [currentStealAlert, setCurrentStealAlert] = useState<StealAlert | null>(null);
   const [currentTeam, setCurrentTeam] = useState<TeamInfo | null>(null);
+  const [currentWheelEvent, setCurrentWheelEvent] = useState<WheelEvent | null>(null);
+
+  const clearWheelEvent = useCallback(() => setCurrentWheelEvent(null), []);
 
   const dismissStealAlert = useCallback(async () => {
     if (currentStealAlert && token) {
@@ -109,7 +117,17 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           if (!seenStealAlertIds.current.has(alert.id)) {
             seenStealAlertIds.current.add(alert.id);
             setCurrentStealAlert(alert);
-            break; // Show one at a time
+            break;
+          }
+        }
+
+        // Check for new wheel events from other players
+        const wheelEvents: WheelEvent[] = meData.wheelEvents || [];
+        for (const event of wheelEvents) {
+          if (!seenWheelEventIds.current.has(event.id)) {
+            seenWheelEventIds.current.add(event.id);
+            setCurrentWheelEvent(event);
+            break;
           }
         }
       }
@@ -164,7 +182,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, [pollForChanges, refreshUser]);
 
   return (
-    <SocketContext.Provider value={{ refresh, currentStealAlert, dismissStealAlert, currentTeam }}>
+    <SocketContext.Provider value={{ refresh, currentStealAlert, dismissStealAlert, currentTeam, currentWheelEvent, clearWheelEvent }}>
       {children}
     </SocketContext.Provider>
   );

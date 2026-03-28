@@ -9,6 +9,7 @@ import BonusCard from "@/components/bonuses/BonusCard";
 import BonusResultOverlay from "@/components/bonuses/BonusResultOverlay";
 import StealTargetPicker from "@/components/bonuses/StealTargetPicker";
 import ActiveBonusIndicator from "@/components/bonuses/ActiveBonusIndicator";
+import WheelModal from "@/components/bonuses/WheelModal";
 import { motion } from "framer-motion";
 import type { BonusType } from "@/types";
 import Link from "next/link";
@@ -43,6 +44,7 @@ export default function BonusesPage() {
   const [showStealPicker, setShowStealPicker] = useState(false);
   const [activeGainDouble, setActiveGainDouble] = useState<string | null>(null);
   const [activeBouclier, setActiveBouclier] = useState<string | null>(null);
+  const [wheelResult, setWheelResult] = useState<{ segmentIndex: number; amount: number; targetUsername?: string } | null>(null);
 
   const fetchBonuses = useCallback(async () => {
     if (!token) return;
@@ -120,6 +122,13 @@ export default function BonusesPage() {
           bonusType: type,
           data: data.bonus.data,
           expiresAt: data.bonus.expiresAt,
+        });
+      } else if (type === "ROUE") {
+        refreshUser();
+        setWheelResult({
+          segmentIndex: data.bonus.data.segmentIndex,
+          amount: data.bonus.data.amount,
+          targetUsername: data.bonus.data.targetUsername,
         });
       } else {
         setShowResultOverlay({
@@ -262,6 +271,16 @@ export default function BonusesPage() {
           data={showResultOverlay.data}
           expiresAt={showResultOverlay.expiresAt}
           onClose={() => setShowResultOverlay(null)}
+        />
+      )}
+
+      {/* Wheel modal (player) */}
+      {wheelResult && (
+        <WheelModal
+          segmentIndex={wheelResult.segmentIndex}
+          amount={wheelResult.amount}
+          targetUsername={wheelResult.targetUsername}
+          onClose={() => { setWheelResult(null); fetchBonuses(); }}
         />
       )}
 

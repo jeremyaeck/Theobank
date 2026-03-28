@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
@@ -9,7 +9,15 @@ interface Props {
 }
 
 export default function CameraModal({ onCapture, onClose }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    if (node && streamRef.current) {
+      node.srcObject = streamRef.current;
+    }
+  }, []);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [captured, setCaptured] = useState<string | null>(null);
@@ -19,6 +27,7 @@ export default function CameraModal({ onCapture, onClose }: Props) {
     navigator.mediaDevices
       .getUserMedia({ video: { facingMode: "user", width: 512, height: 512 } })
       .then((s) => {
+        streamRef.current = s;
         setStream(s);
         if (videoRef.current) {
           videoRef.current.srcObject = s;
@@ -27,16 +36,9 @@ export default function CameraModal({ onCapture, onClose }: Props) {
       .catch(() => setError("Impossible d'accéder à la caméra"));
 
     return () => {
-      stream?.getTracks().forEach((t) => t.stop());
+      streamRef.current?.getTracks().forEach((t) => t.stop());
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Re-attach stream whenever the video element re-mounts (after "Reprendre")
-  useEffect(() => {
-    if (!captured && stream && videoRef.current) {
-      videoRef.current.srcObject = stream;
-    }
-  }, [captured, stream]);
+  }, []);
 
   const handleCapture = () => {
     const video = videoRef.current;
@@ -71,7 +73,7 @@ export default function CameraModal({ onCapture, onClose }: Props) {
 
   const handleConfirm = () => {
     if (captured) {
-      stream?.getTracks().forEach((t) => t.stop());
+      streamRef.current?.getTracks().forEach((t) => t.stop());
       onCapture(captured);
     }
   };
@@ -100,7 +102,7 @@ export default function CameraModal({ onCapture, onClose }: Props) {
                 {!captured ? (
                   <motion.div key="video" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
                     <video
-                      ref={videoRef}
+                      ref={videoCallbackRef}
                       autoPlay
                       playsInline
                       muted

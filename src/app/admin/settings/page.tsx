@@ -22,6 +22,8 @@ export default function AdminSettingsPage() {
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [savingTeam, setSavingTeam] = useState(false);
+  const [renamingTeamId, setRenamingTeamId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const approvedUsers = useMemo(() => users.filter((u) => u.approved), [users]);
   const selectedTeam = useMemo(() => teams.find((t) => t.id === selectedTeamId), [teams, selectedTeamId]);
@@ -168,6 +170,29 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const renameTeam = async (teamId: string) => {
+    const name = renameValue.trim();
+    if (name.length < 2) { addToast("Nom trop court", "error"); return; }
+    setSavingTeam(true);
+    try {
+      const res = await fetch("/api/admin/teams", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ teamId, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setTeams(data.teams || []);
+      setRenamingTeamId(null);
+      setRenameValue("");
+      addToast("Équipe renommée", "success");
+    } catch (err: any) {
+      addToast(err.message || "Erreur", "error");
+    } finally {
+      setSavingTeam(false);
+    }
+  };
+
   const deleteTeam = async (teamId: string) => {
     if (!confirm("Supprimer cette équipe ?")) return;
     setSavingTeam(true);
@@ -270,24 +295,55 @@ export default function AdminSettingsPage() {
             ) : (
               <div className="space-y-2">
                 {teams.map((team) => (
-                  <div key={team.id} className="flex items-center gap-2">
-                    <button
-                      onClick={() => setSelectedTeamId(team.id)}
-                      className={`flex-1 text-left px-3 py-2 rounded-lg text-sm border transition-all ${
-                        selectedTeamId === team.id
-                          ? "bg-purple-500/20 border-purple-500/40 text-purple-200"
-                          : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
-                      }`}
-                    >
-                      {team.name} ({team.members.length})
-                    </button>
-                    <button
-                      onClick={() => deleteTeam(team.id)}
-                      disabled={savingTeam}
-                      className="px-2.5 py-2 rounded-lg text-xs bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 disabled:opacity-50"
-                    >
-                      Suppr.
-                    </button>
+                  <div key={team.id} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedTeamId(team.id)}
+                        className={`flex-1 text-left px-3 py-2 rounded-lg text-sm border transition-all ${
+                          selectedTeamId === team.id
+                            ? "bg-purple-500/20 border-purple-500/40 text-purple-200"
+                            : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
+                        }`}
+                      >
+                        {team.name} ({team.members.length})
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRenamingTeamId(renamingTeamId === team.id ? null : team.id);
+                          setRenameValue(team.name);
+                        }}
+                        disabled={savingTeam}
+                        className="px-2.5 py-2 rounded-lg text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => deleteTeam(team.id)}
+                        disabled={savingTeam}
+                        className="px-2.5 py-2 rounded-lg text-xs bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 disabled:opacity-50"
+                      >
+                        Suppr.
+                      </button>
+                    </div>
+                    {renamingTeamId === team.id && (
+                      <div className="flex gap-2 pl-1">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-cyan-500/30 text-white text-sm focus:outline-none focus:border-cyan-500/60"
+                          placeholder="Nouveau nom"
+                          onKeyDown={(e) => e.key === "Enter" && renameTeam(team.id)}
+                        />
+                        <button
+                          onClick={() => renameTeam(team.id)}
+                          disabled={savingTeam}
+                          className="px-3 py-1.5 rounded-lg text-xs bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50"
+                        >
+                          OK
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

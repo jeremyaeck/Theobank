@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import BalanceDisplay from "@/components/dashboard/BalanceDisplay";
 import ActiveDuels from "@/components/dashboard/ActiveDuels";
 import TransactionList from "@/components/dashboard/TransactionList";
+import TeamCard from "@/components/dashboard/TeamCard";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -75,6 +76,14 @@ export default function DashboardPage() {
             <span className="text-xl mr-2">📸</span>
             <span className="text-base">Créer un souvenir</span>
           </a>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.29 }}
+        >
+          <TeamCard />
         </motion.div>
 
         <motion.div

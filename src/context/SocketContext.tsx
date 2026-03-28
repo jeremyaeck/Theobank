@@ -26,6 +26,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const { addToast } = useToast();
   const lastBalanceRef = useRef<number | null>(null);
   const lastDuelCountRef = useRef<number | null>(null);
+  const lastTeamIdRef = useRef<string | null | undefined>(undefined); // undefined = not yet initialized
+  const lastTeamNameRef = useRef<string | null>(null);
   const seenStealAlertIds = useRef<Set<string>>(new Set());
   const [currentStealAlert, setCurrentStealAlert] = useState<StealAlert | null>(null);
 
@@ -77,6 +79,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         }
         lastBalanceRef.current = newBalance;
 
+        // Check for team changes
+        const newTeamId: string | null = meData.team?.id ?? null;
+        const newTeamName: string | null = meData.team?.name ?? null;
+        if (lastTeamIdRef.current !== undefined) {
+          // Already initialized — check for change
+          if (newTeamId !== lastTeamIdRef.current || newTeamName !== lastTeamNameRef.current) {
+            if (newTeamId && newTeamName) {
+              addToast(`🏆 Tu rejoins l'équipe ${newTeamName} !`, "success");
+            } else if (!newTeamId && lastTeamIdRef.current) {
+              addToast("Tu as été retiré de ton équipe", "info");
+            }
+          }
+        }
+        lastTeamIdRef.current = newTeamId;
+        lastTeamNameRef.current = newTeamName;
+
         // Check for new steal alerts
         const alerts: StealAlert[] = meData.stealAlerts || [];
         for (const alert of alerts) {
@@ -113,12 +131,16 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       // Reset baseline when logged out
       lastBalanceRef.current = null;
       lastDuelCountRef.current = null;
+      lastTeamIdRef.current = undefined;
+      lastTeamNameRef.current = null;
       return;
     }
 
     // Reset baseline on user change (new login) to avoid wrong diff
     lastBalanceRef.current = null;
     lastDuelCountRef.current = null;
+    lastTeamIdRef.current = undefined;
+    lastTeamNameRef.current = null;
 
     // Initial fetch to set baseline
     pollForChanges();

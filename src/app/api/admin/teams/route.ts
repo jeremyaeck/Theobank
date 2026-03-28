@@ -72,6 +72,11 @@ const updateMembersSchema = z.object({
   userIds: z.array(z.string().min(1)),
 });
 
+const renameSchema = z.object({
+  teamId: z.string().min(1),
+  name: z.string().trim().min(2).max(40),
+});
+
 const deleteSchema = z.object({
   teamId: z.string().min(1),
 });
@@ -177,7 +182,18 @@ export async function PATCH(req: NextRequest) {
   if (!auth.ok) return auth.response;
 
   try {
-    const { teamId, userIds } = updateMembersSchema.parse(await req.json());
+    const body = await req.json();
+
+    // Rename action
+    if (body.name !== undefined && body.userIds === undefined) {
+      const { teamId, name } = renameSchema.parse(body);
+      const team = await prisma.team.findUnique({ where: { id: teamId }, select: { id: true } });
+      if (!team) return NextResponse.json({ error: "Équipe introuvable" }, { status: 404 });
+      await prisma.team.update({ where: { id: teamId }, data: { name } });
+      return NextResponse.json({ teams: await getTeams() });
+    }
+
+    const { teamId, userIds } = updateMembersSchema.parse(body);
     const uniqueUserIds = [...new Set(userIds)];
 
     const team = await prisma.team.findUnique({ where: { id: teamId }, select: { id: true } });

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { formatTD } from "@/lib/utils";
+import { formatTD, getInitials, getAvatarColor } from "@/lib/utils";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -37,7 +37,23 @@ export default function Navbar() {
           </span>
         )}
 
-        <span className="text-sm text-white/70">{user.username}</span>
+        {/* Avatar / profile link */}
+        <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity" title="Mon profil">
+          {user.profilePhotoUrl ? (
+            <img
+              src={user.profilePhotoUrl}
+              alt={user.username}
+              className="w-8 h-8 rounded-full object-cover border border-white/20"
+            />
+          ) : (
+            <div
+              className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(user.username)} flex items-center justify-center text-xs font-bold text-white`}
+            >
+              {getInitials(user.username)}
+            </div>
+          )}
+          <span className="text-sm text-white/70 hidden sm:inline">{user.username}</span>
+        </Link>
 
         <button
           onClick={logout}

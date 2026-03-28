@@ -8,22 +8,36 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  username     String   @unique
-  passwordHash String
-  balance      Int      @default(0)
-  isAdmin      Boolean  @default(false)
-  approved     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  username        String   @unique
+  passwordHash    String
+  balance         Int      @default(0)
+  isAdmin         Boolean  @default(false)
+  approved        Boolean  @default(false)
+  profilePhotoUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  duelsAsChallenger Duel[]        @relation("Challenger")
-  duelsAsOpponent   Duel[]        @relation("Opponent")
-  transactions      Transaction[]
-  auctionBids       AuctionBid[]
-  auctionWins       AuctionItem[]
-  bonusUsages       BonusUsage[]
-  teamMembership    TeamMember?
+  duelsAsChallenger  Duel[]               @relation("Challenger")
+  duelsAsOpponent    Duel[]               @relation("Opponent")
+  transactions       Transaction[]
+  auctionBids        AuctionBid[]
+  auctionWins        AuctionItem[]
+  bonusUsages        BonusUsage[]
+  teamMembership     TeamMember?
+  webAuthnCredential WebAuthnCredential?
+}
+
+model WebAuthnCredential {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  credentialId String
+  publicKey    String
+  counter      BigInt   @default(0)
+  transports   String   @default("[]")
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Team {

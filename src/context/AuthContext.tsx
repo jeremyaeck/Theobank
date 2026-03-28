@@ -73,7 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) throw new Error(data.error);
     localStorage.setItem("token", data.token);
     setToken(data.token);
-    setUser(data.user);
+    // Fetch full user (includes profilePhotoUrl, hasWebAuthn)
+    await fetchUser(data.token);
     if (data.user.isAdmin) {
       router.push("/admin");
     } else if (!data.user.approved) {
@@ -93,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) throw new Error(data.error);
     localStorage.setItem("token", data.token);
     setToken(data.token);
-    setUser(data.user);
+    await fetchUser(data.token);
     router.push(data.user.approved ? "/dashboard" : "/pending");
   };
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
+import { startAuthentication } from "@simplewebauthn/browser";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +24,49 @@ export default function LoginPage() {
       setError(err.message || "Erreur de connexion");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBiometric = async () => {
+    if (!username.trim()) {
+      setError("Entrez votre nom d'utilisateur d'abord");
+      return;
+    }
+    setError("");
+    setBiometricLoading(true);
+    try {
+      // Get options
+      const optRes = await fetch("/api/auth/webauthn/login-options", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim() }),
+      });
+      const { options, challengeToken, error: optErr } = await optRes.json();
+      if (!optRes.ok) throw new Error(optErr || "Face ID non configuré");
+
+      // Trigger Face ID / Touch ID
+      const credential = await startAuthentication({ optionsJSON: options });
+
+      // Verify
+      const verRes = await fetch("/api/auth/webauthn/login-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential, challengeToken }),
+      });
+      const data = await verRes.json();
+      if (!verRes.ok) throw new Error(data.error || "Authentification échouée");
+
+      // Store token and redirect (page reload picks up from localStorage)
+      localStorage.setItem("token", data.token);
+      window.location.href = data.user.isAdmin ? "/admin" : data.user.approved ? "/dashboard" : "/pending";
+    } catch (e: any) {
+      if (e.name === "NotAllowedError") {
+        // User cancelled
+      } else {
+        setError(e.message || "Authentification biométrique échouée");
+      }
+    } finally {
+      setBiometricLoading(false);
     }
   };
 
@@ -76,6 +121,26 @@ export default function LoginPage() {
             className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? "Connexion..." : "Se connecter"}
+          </button>
+
+          <div className="relative flex items-center gap-3">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-xs text-white/30">ou</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleBiometric}
+            disabled={biometricLoading}
+            className="w-full py-3 rounded-xl bg-white/5 border border-white/15 text-white/70 font-medium hover:bg-white/10 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+          >
+            {biometricLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white/70 rounded-full animate-spin" />
+            ) : (
+              <span className="text-lg">🔐</span>
+            )}
+            {biometricLoading ? "Vérification..." : "Connexion avec Face ID / Touch ID"}
           </button>
 
           <p className="text-center text-sm text-white/40">

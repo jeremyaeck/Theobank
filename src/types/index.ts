@@ -17,6 +17,8 @@ export interface User {
   balance: number;
   isAdmin: boolean;
   approved?: boolean;
+  profilePhotoUrl?: string | null;
+  hasWebAuthn?: boolean;
   createdAt: string;
 }
 

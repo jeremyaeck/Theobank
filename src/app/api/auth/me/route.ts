@@ -6,6 +6,9 @@ export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
   if (!user) return unauthorized();
 
+  // Check WebAuthn credential
+  const webAuthnCred = await prisma.webAuthnCredential.findUnique({ where: { userId: user.id } });
+
   // Check for unacknowledged steal alerts targeting this user
   const stealAlerts = await prisma.bonusUsage.findMany({
     where: {
@@ -52,6 +55,8 @@ export async function GET(req: NextRequest) {
       balance: user.balance,
       isAdmin: user.isAdmin,
       approved: user.approved,
+      profilePhotoUrl: user.profilePhotoUrl ?? null,
+      hasWebAuthn: !!webAuthnCred,
       createdAt: user.createdAt.toISOString(),
     },
     team,

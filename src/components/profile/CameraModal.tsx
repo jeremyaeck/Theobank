@@ -31,6 +31,13 @@ export default function CameraModal({ onCapture, onClose }: Props) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Re-attach stream whenever the video element re-mounts (after "Reprendre")
+  useEffect(() => {
+    if (!captured && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [captured, stream]);
+
   const handleCapture = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -60,12 +67,6 @@ export default function CameraModal({ onCapture, onClose }: Props) {
 
   const handleRetake = () => {
     setCaptured(null);
-    // Re-attach stream after state update (video element re-mounts)
-    setTimeout(() => {
-      if (videoRef.current && stream) {
-        videoRef.current.srcObject = stream;
-      }
-    }, 50);
   };
 
   const handleConfirm = () => {

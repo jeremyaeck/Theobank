@@ -58,7 +58,15 @@ export default function CameraModal({ onCapture, onClose }: Props) {
     setCaptured(dataUrl);
   };
 
-  const handleRetake = () => setCaptured(null);
+  const handleRetake = () => {
+    setCaptured(null);
+    // Re-attach stream after state update (video element re-mounts)
+    setTimeout(() => {
+      if (videoRef.current && stream) {
+        videoRef.current.srcObject = stream;
+      }
+    }, 50);
+  };
 
   const handleConfirm = () => {
     if (captured) {

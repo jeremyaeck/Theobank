@@ -109,7 +109,16 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, [token, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!token || !user) return;
+    if (!token || !user) {
+      // Reset baseline when logged out
+      lastBalanceRef.current = null;
+      lastDuelCountRef.current = null;
+      return;
+    }
+
+    // Reset baseline on user change (new login) to avoid wrong diff
+    lastBalanceRef.current = null;
+    lastDuelCountRef.current = null;
 
     // Initial fetch to set baseline
     pollForChanges();

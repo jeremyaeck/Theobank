@@ -18,7 +18,14 @@ export default function AdminPage() {
   const [auctionPhases, setAuctionPhases] = useState<AuctionPhase[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState("");
-  const [tab, setTab] = useState<"players" | "duels" | "auctions">("players");
+  const [renamingTeamId, setRenamingTeamId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
+  const [randomTeamCount, setRandomTeamCount] = useState(2);
+  const [randomPrefix, setRandomPrefix] = useState("Équipe");
+  const [savingTeam, setSavingTeam] = useState(false);
+  const [teamMemberIds, setTeamMemberIds] = useState<string[]>([]);
+  const [tab, setTab] = useState<"players" | "duels" | "auctions" | "teams">("players");
   const [loading, setLoading] = useState(true);
 
   // Credit/debit modal
@@ -160,6 +167,117 @@ export default function AdminPage() {
     }
   };
 
+  const selectedTeamObj = teams.find((t) => t.id === selectedTeamId);
+
+  // Sync teamMemberIds when selected team changes
+  const handleSelectTeam = (teamId: string) => {
+    setSelectedTeamId(teamId);
+    const team = teams.find((t) => t.id === teamId);
+    setTeamMemberIds(team ? team.members.map((m) => m.id) : []);
+    setRenamingTeamId(null);
+  };
+
+  const handleCreateTeam = async () => {
+    const name = newTeamName.trim();
+    if (name.length < 2) { addToast("Nom trop court", "error"); return; }
+    setSavingTeam(true);
+    try {
+      const res = await fetch("/api/admin/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "create", name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setTeams(data.teams || []);
+      setNewTeamName("");
+      addToast("Équipe créée", "success");
+    } catch (err: any) { addToast(err.message || "Erreur", "error"); }
+    finally { setSavingTeam(false); }
+  };
+
+  const handleRandomize = async () => {
+    if (!confirm("Générer des équipes aléatoires ? Les équipes actuelles seront remplacées.")) return;
+    setSavingTeam(true);
+    try {
+      const res = await fetch("/api/admin/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "randomize", teamCount: randomTeamCount, prefix: randomPrefix.trim() || "Équipe" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setTeams(data.teams || []);
+      setSelectedTeamId("");
+      setTeamMemberIds([]);
+      addToast("Équipes générées aléatoirement", "success");
+    } catch (err: any) { addToast(err.message || "Erreur", "error"); }
+    finally { setSavingTeam(false); }
+  };
+
+  const handleRenameTeam = async (teamId: string) => {
+    const name = renameValue.trim();
+    if (name.length < 2) { addToast("Nom trop court", "error"); return; }
+    setSavingTeam(true);
+    try {
+      const res = await fetch("/api/admin/teams", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ teamId, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setTeams(data.teams || []);
+      setRenamingTeamId(null);
+      setRenameValue("");
+      addToast("Équipe renommée", "success");
+    } catch (err: any) { addToast(err.message || "Erreur", "error"); }
+    finally { setSavingTeam(false); }
+  };
+
+  const handleSaveTeamMembers = async () => {
+    if (!selectedTeamId) { addToast("Choisissez une équipe", "error"); return; }
+    setSavingTeam(true);
+    try {
+      const res = await fetch("/api/admin/teams", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ teamId: selectedTeamId, userIds: teamMemberIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setTeams(data.teams || []);
+      addToast("Membres mis à jour", "success");
+    } catch (err: any) { addToast(err.message || "Erreur", "error"); }
+    finally { setSavingTeam(false); }
+  };
+
+  const handleDeleteTeam = async (teamId: string) => {
+    if (!confirm("Supprimer cette équipe ?")) return;
+    setSavingTeam(true);
+    try {
+      const res = await fetch("/api/admin/teams", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ teamId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setTeams(data.teams || []);
+      if (selectedTeamId === teamId) { setSelectedTeamId(""); setTeamMemberIds([]); }
+      addToast("Équipe supprimée", "success");
+    } catch (err: any) { addToast(err.message || "Erreur", "error"); }
+    finally { setSavingTeam(false); }
+  };
+
+  // Users sorted: team members first when a team is selected
+  const sortedApprovedUsers = selectedTeamObj
+    ? [
+        ...approvedUsers.filter((u) => selectedTeamObj.members.some((m) => m.id === u.id)),
+        ...approvedUsers.filter((u) => !selectedTeamObj.members.some((m) => m.id === u.id)),
+      ]
+    : approvedUsers;
+
   const applyTeamSelection = () => {
     if (!selectedTeam) {
       addToast("Choisissez une équipe", "error");
@@ -236,6 +354,16 @@ export default function AdminPage() {
               }`}
             >
               Enchères
+            </button>
+            <button
+              onClick={() => setTab("teams")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                tab === "teams"
+                  ? "bg-amber-500/20 border border-amber-500/40 text-amber-300"
+                  : "bg-white/5 text-white/50 hover:bg-white/10"
+              }`}
+            >
+              Équipes
             </button>
             <Link
               href="/admin/settings"
@@ -429,6 +557,159 @@ export default function AdminPage() {
               )}
             </div>
           )}
+          {/* Teams tab */}
+          {tab === "teams" && (
+            <div className="space-y-4">
+              {/* Create + Randomize */}
+              <div className="glass p-4 space-y-3">
+                <p className="text-sm font-medium text-white/80">Créer une équipe</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newTeamName}
+                    onChange={(e) => setNewTeamName(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-cyan-500/50"
+                    placeholder="Nom d'équipe"
+                    onKeyDown={(e) => e.key === "Enter" && handleCreateTeam()}
+                  />
+                  <button
+                    onClick={handleCreateTeam}
+                    disabled={savingTeam}
+                    className="px-3 py-2 rounded-xl text-sm bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50"
+                  >
+                    Créer
+                  </button>
+                </div>
+
+                <p className="text-sm font-medium text-white/80 pt-1">Équipes aléatoires</p>
+                <div className="flex gap-2">
+                  <input
+                    type="number" min={2} max={20} value={randomTeamCount}
+                    onChange={(e) => setRandomTeamCount(Number(e.target.value))}
+                    className="w-20 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none"
+                    title="Nombre d'équipes"
+                  />
+                  <input
+                    type="text" value={randomPrefix}
+                    onChange={(e) => setRandomPrefix(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none"
+                    placeholder="Préfixe (ex: Équipe)"
+                  />
+                  <button
+                    onClick={handleRandomize}
+                    disabled={savingTeam}
+                    className="px-3 py-2 rounded-xl text-sm bg-orange-500/15 border border-orange-500/30 text-orange-300 hover:bg-orange-500/25 disabled:opacity-50"
+                  >
+                    Aléatoire
+                  </button>
+                </div>
+              </div>
+
+              {/* Team list */}
+              {teams.length === 0 ? (
+                <p className="text-white/40 text-center py-4">Aucune équipe</p>
+              ) : (
+                <div className="glass p-4 space-y-3">
+                  <p className="text-sm font-medium text-white/80">Équipes ({teams.length})</p>
+                  <div className="space-y-1">
+                    {teams.map((team) => (
+                      <div key={team.id} className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleSelectTeam(selectedTeamId === team.id ? "" : team.id)}
+                            className={`flex-1 text-left px-3 py-2 rounded-lg text-sm border transition-all ${
+                              selectedTeamId === team.id
+                                ? "bg-amber-500/20 border-amber-500/40 text-amber-200"
+                                : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
+                            }`}
+                          >
+                            {team.name} <span className="text-white/40">({team.members.length})</span>
+                          </button>
+                          <button
+                            onClick={() => { setRenamingTeamId(renamingTeamId === team.id ? null : team.id); setRenameValue(team.name); }}
+                            disabled={savingTeam}
+                            className="px-2.5 py-2 rounded-lg text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTeam(team.id)}
+                            disabled={savingTeam}
+                            className="px-2.5 py-2 rounded-lg text-xs bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 disabled:opacity-50"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        {renamingTeamId === team.id && (
+                          <div className="flex gap-2 pl-1">
+                            <input
+                              type="text" value={renameValue}
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-cyan-500/30 text-white text-sm focus:outline-none focus:border-cyan-500/60"
+                              placeholder="Nouveau nom"
+                              onKeyDown={(e) => e.key === "Enter" && handleRenameTeam(team.id)}
+                            />
+                            <button
+                              onClick={() => handleRenameTeam(team.id)}
+                              disabled={savingTeam}
+                              className="px-3 py-1.5 rounded-lg text-xs bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50"
+                            >
+                              OK
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Member editor for selected team */}
+              {selectedTeamObj && (
+                <div className="glass p-4 space-y-3">
+                  <p className="text-sm font-medium text-white/80">
+                    Membres — <span className="text-amber-300">{selectedTeamObj.name}</span>
+                  </p>
+                  <p className="text-xs text-white/40">Les membres de l&apos;équipe apparaissent en haut.</p>
+                  <div className="max-h-80 overflow-y-auto space-y-1 pr-1">
+                    {sortedApprovedUsers.map((u) => {
+                      const isMember = selectedTeamObj.members.some((m) => m.id === u.id);
+                      return (
+                        <label
+                          key={u.id}
+                          className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                            isMember ? "bg-amber-500/10 border border-amber-500/20" : "bg-white/5"
+                          }`}
+                        >
+                          <span className={`text-sm ${isMember ? "text-amber-200 font-medium" : "text-white/70"}`}>
+                            {isMember && "★ "}{u.username}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={teamMemberIds.includes(u.id)}
+                            onChange={() =>
+                              setTeamMemberIds((prev) =>
+                                prev.includes(u.id) ? prev.filter((id) => id !== u.id) : [...prev, u.id]
+                              )
+                            }
+                            className="w-4 h-4 rounded border-white/20 bg-white/5 text-amber-500 focus:ring-amber-500/40"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={handleSaveTeamMembers}
+                    disabled={savingTeam}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-bold hover:opacity-90 disabled:opacity-50"
+                  >
+                    Sauvegarder les membres
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Auctions tab */}
           {tab === "auctions" && (
             <div className="space-y-4">

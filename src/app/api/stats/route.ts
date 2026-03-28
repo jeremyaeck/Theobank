@@ -76,12 +76,10 @@ export async function GET(req: NextRequest) {
   ];
 
   const jeuStats = jeuWindows.map(({ label, from, to }) => {
-    // Jeu 1: all gains (duels + bank + bonuses), Jeu 2-4: bank transfers only
-    const allowedTypes = label === "Jeu 1" ? gainTypes : ["ADMIN_CREDIT"];
     const gainsByPlayer: Record<string, number> = {};
     for (const p of players) gainsByPlayer[p.id] = 0;
     for (const tx of transactions) {
-      if (!allowedTypes.includes(tx.type) || tx.amount <= 0) continue;
+      if (!gainTypes.includes(tx.type) || tx.amount <= 0) continue;
       const t = tx.createdAt;
       if (from && t <= from) continue;
       if (to && t >= to) continue;

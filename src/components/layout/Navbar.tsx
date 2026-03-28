@@ -18,23 +18,23 @@ export default function Navbar() {
 
       <div className="flex items-center gap-3">
         {!user.isAdmin && (
-          <>
-            <span className="text-sm font-semibold text-cyan-400">
-              {formatTD(user.balance)}
-            </span>
-            <Link
-              href="/duels/new"
-              className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
-            >
-              Défier
-            </Link>
-          </>
+          <span className="text-sm font-semibold text-cyan-400">
+            {formatTD(user.balance)}
+          </span>
         )}
 
         {user.isAdmin && (
-          <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-            Admin
-          </span>
+          <>
+            <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              Admin
+            </span>
+            <Link
+              href="/admin/settings"
+              className="text-xs px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 transition-all"
+            >
+              ⚙️ Settings
+            </Link>
+          </>
         )}
 
         {/* Avatar / profile link */}

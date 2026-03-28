@@ -365,12 +365,6 @@ export default function AdminPage() {
             >
               Équipes
             </button>
-            <Link
-              href="/admin/settings"
-              className="ml-auto px-4 py-2 rounded-lg text-sm font-medium bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 transition-all"
-            >
-              Settings
-            </Link>
           </div>
 
           {/* Players tab */}

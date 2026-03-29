@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const [showCamera, setShowCamera] = useState(false);
   const [savingPhoto, setSavingPhoto] = useState(false);
   const [webAuthnLoading, setWebAuthnLoading] = useState(false);
+  const [selectedAchievement, setSelectedAchievement] = useState<{ id: string; name: string; description: string; emoji: string; unlocked: boolean; unlockedAt?: string } | null>(null);
 
   const handlePhotoCapture = async (dataUrl: string) => {
     setShowCamera(false);
@@ -171,18 +172,22 @@ export default function ProfilePage() {
               {Object.values(ACHIEVEMENTS).map((def) => {
                 const unlocked = achievements.find((a) => a.achievementId === def.id);
                 return (
-                  <div
+                  <button
                     key={def.id}
+                    onClick={() => setSelectedAchievement({
+                      ...def,
+                      unlocked: !!unlocked,
+                      unlockedAt: unlocked?.unlockedAt,
+                    })}
                     className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${
                       unlocked
-                        ? "bg-violet-500/10 border-violet-500/30"
-                        : "bg-white/5 border-white/5 opacity-30"
+                        ? "bg-violet-500/10 border-violet-500/30 hover:bg-violet-500/20"
+                        : "bg-white/5 border-white/5 opacity-30 hover:opacity-50"
                     }`}
-                    title={def.description}
                   >
                     <span className={`text-2xl ${unlocked ? "" : "grayscale"}`}>{def.emoji}</span>
                     <p className="text-xs text-white/70 font-medium text-center leading-tight">{def.name}</p>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -250,6 +255,64 @@ export default function ProfilePage() {
             onCapture={handlePhotoCapture}
             onClose={() => setShowCamera(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Achievement detail modal */}
+      <AnimatePresence>
+        {selectedAchievement && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-6"
+            onClick={() => setSelectedAchievement(null)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`relative w-full max-w-xs rounded-2xl border p-6 flex flex-col items-center gap-4 ${
+                selectedAchievement.unlocked
+                  ? "bg-[#1a1a2e] border-violet-500/40"
+                  : "bg-[#1a1a2e] border-white/10"
+              }`}
+            >
+              <span className={`text-5xl ${selectedAchievement.unlocked ? "" : "grayscale"}`}>
+                {selectedAchievement.emoji}
+              </span>
+              <p className={`text-lg font-bold ${
+                selectedAchievement.unlocked ? "text-violet-300" : "text-white/40"
+              }`}>
+                {selectedAchievement.name}
+              </p>
+              <p className={`text-sm text-center ${
+                selectedAchievement.unlocked ? "text-white/70" : "text-white/30"
+              }`}>
+                {selectedAchievement.description}
+              </p>
+              {selectedAchievement.unlocked && selectedAchievement.unlockedAt && (
+                <p className="text-xs text-violet-400/60">
+                  Débloqué le {new Date(selectedAchievement.unlockedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              )}
+              {!selectedAchievement.unlocked && (
+                <p className="text-xs text-white/20">Non débloqué</p>
+              )}
+              <button
+                onClick={() => setSelectedAchievement(null)}
+                className={`mt-2 w-full py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  selectedAchievement.unlocked
+                    ? "bg-violet-500/20 text-violet-300 hover:bg-violet-500/30"
+                    : "bg-white/5 text-white/40 hover:bg-white/10"
+                }`}
+              >
+                Fermer
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </AuthGuard>

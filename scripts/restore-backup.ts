@@ -16,6 +16,7 @@ async function main() {
 
   // Suppression dans l'ordre inverse des dépendances
   console.log('Suppression des données existantes...');
+  await prisma.userAchievement.deleteMany();
   await prisma.bonusUsage.deleteMany();
   await prisma.auctionBid.deleteMany();
   await prisma.auctionItem.deleteMany();

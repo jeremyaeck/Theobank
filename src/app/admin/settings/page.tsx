@@ -32,6 +32,7 @@ export default function AdminSettingsPage() {
   const { token } = useAuth();
   const { addToast } = useToast();
   const [resetting, setResetting] = useState(false);
+  const [resettingGame, setResettingGame] = useState(false);
   const [phases, setPhases] = useState<PhaseConfig[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
@@ -302,18 +303,52 @@ export default function AdminSettingsPage() {
           </div>
 
           {/* Danger zone */}
-          <div className="glass p-4 space-y-3 border border-red-500/20">
+          <div className="glass p-4 space-y-5 border border-red-500/20">
             <p className="text-sm font-medium text-red-300">Actions dangereuses</p>
-            <p className="text-xs text-white/50">
-              Cette action remet tous les soldes non-admin à 50 T$ et annule les duels actifs/en attente.
-            </p>
-            <button
-              onClick={handleReset}
-              disabled={resetting}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 disabled:opacity-50 transition-all"
-            >
-              {resetting ? "Réinitialisation..." : "Reset tout"}
-            </button>
+
+            <div className="space-y-2">
+              <p className="text-xs text-white/50">
+                Remet tous les soldes non-admin à 50 T$ et annule les duels actifs/en attente.
+              </p>
+              <button
+                onClick={handleReset}
+                disabled={resetting}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 disabled:opacity-50 transition-all"
+              >
+                {resetting ? "Réinitialisation..." : "Reset soldes"}
+              </button>
+            </div>
+
+            <div className="border-t border-red-500/10 pt-4 space-y-2">
+              <p className="text-xs text-white/50">
+                Supprime <strong className="text-red-300">tous les joueurs</strong>, duels, transactions, bonus, achievements et réinitialise les enchères avec les 16 cadeaux par défaut. Assurez-vous d&apos;avoir sauvegardé la base de données avant.
+              </p>
+              <button
+                onClick={async () => {
+                  if (!confirm("ATTENTION : Cette action supprime TOUS les joueurs et remet les enchères à zéro.\n\nAssurez-vous d'avoir fait un backup de la base de données.\n\nContinuer ?")) return;
+                  if (!confirm("Êtes-vous vraiment sûr ? Cette action est IRRÉVERSIBLE.")) return;
+                  setResettingGame(true);
+                  try {
+                    const res = await fetch("/api/admin/reset-game", {
+                      method: "POST",
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (!res.ok) throw new Error("Erreur");
+                    addToast("Partie réinitialisée — tous les joueurs supprimés", "success");
+                    // Reload to see fresh auction config
+                    window.location.reload();
+                  } catch {
+                    addToast("Erreur lors de la réinitialisation", "error");
+                  } finally {
+                    setResettingGame(false);
+                  }
+                }}
+                disabled={resettingGame}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30 disabled:opacity-50 transition-all"
+              >
+                {resettingGame ? "Réinitialisation en cours..." : "Réinitialiser la partie"}
+              </button>
+            </div>
           </div>
         </motion.div>
       </main>

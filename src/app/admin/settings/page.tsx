@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { motion } from "framer-motion";
+
+const QRCode = dynamic(() => import("qrcode.react").then((m) => m.QRCodeSVG), { ssr: false });
 
 interface ItemConfig {
   name: string;
@@ -275,6 +278,27 @@ export default function AdminSettingsPage() {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* QR Code invitation */}
+          <div className="glass p-4 space-y-4">
+            <p className="text-sm font-medium text-white/80">📲 QR Code d&apos;invitation</p>
+            <p className="text-xs text-white/40">
+              Partagez ce QR code avec les joueurs pour qu&apos;ils accèdent directement à l&apos;inscription.
+            </p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="p-4 bg-white rounded-2xl">
+                <QRCode
+                  value={typeof window !== "undefined" ? `${window.location.origin}/signup` : "/signup"}
+                  size={180}
+                  bgColor="#ffffff"
+                  fgColor="#1a1a2e"
+                />
+              </div>
+              <p className="text-xs text-white/30 font-mono">
+                {typeof window !== "undefined" ? `${window.location.origin}/signup` : ""}
+              </p>
+            </div>
           </div>
 
           {/* Danger zone */}

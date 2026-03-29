@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastContext";
-import type { StealAlert, WheelEvent } from "@/types";
+import type { StealAlert, WheelEvent, NewAchievementEvent } from "@/types";
 
 interface TeamInfo {
   id: string;
@@ -42,6 +42,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const lastTeamNameRef = useRef<string | null>(null);
   const seenStealAlertIds = useRef<Set<string>>(new Set());
   const seenWheelEventIds = useRef<Set<string>>(new Set());
+  const seenAchievementIds = useRef<Set<string>>(new Set());
   const [currentStealAlert, setCurrentStealAlert] = useState<StealAlert | null>(null);
   const [currentTeam, setCurrentTeam] = useState<TeamInfo | null>(null);
   const [currentWheelEvent, setCurrentWheelEvent] = useState<WheelEvent | null>(null);
@@ -129,6 +130,25 @@ export function SocketProvider({ children }: { children: ReactNode }) {
             setCurrentWheelEvent(event);
             break;
           }
+        }
+
+        // Check for newly unlocked achievements
+        const newAchievements: NewAchievementEvent[] = meData.newAchievements || [];
+        let hasNewAchievement = false;
+        for (const achievement of newAchievements) {
+          if (!seenAchievementIds.current.has(achievement.id)) {
+            seenAchievementIds.current.add(achievement.id);
+            addToast(
+              `${achievement.emoji} ${achievement.name} — ${achievement.description}`,
+              "achievement"
+            );
+            hasNewAchievement = true;
+          }
+        }
+
+        // Refresh user to update achievements in AuthContext when newly unlocked
+        if (hasNewAchievement) {
+          refreshUser();
         }
       }
 

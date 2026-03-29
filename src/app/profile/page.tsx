@@ -7,12 +7,13 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import CameraModal from "@/components/profile/CameraModal";
 import { useAuth } from "@/context/AuthContext";
+import { ACHIEVEMENTS } from "@/lib/achievement-defs";
 import { useToast } from "@/context/ToastContext";
 import { getInitials, getAvatarColor } from "@/lib/utils";
 import Link from "next/link";
 
 export default function ProfilePage() {
-  const { user, token, refreshUser } = useAuth();
+  const { user, token, refreshUser, achievements } = useAuth();
   const { addToast } = useToast();
   const [showCamera, setShowCamera] = useState(false);
   const [savingPhoto, setSavingPhoto] = useState(false);
@@ -155,6 +156,35 @@ export default function ProfilePage() {
                   Supprimer
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Achievements section */}
+          <div className="glass p-6 rounded-2xl space-y-4 mt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🏅</span>
+              <p className="font-semibold text-white/90">Achievements</p>
+              <span className="ml-auto text-xs text-white/40">{achievements.length} / {Object.keys(ACHIEVEMENTS).length}</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {Object.values(ACHIEVEMENTS).map((def) => {
+                const unlocked = achievements.find((a) => a.achievementId === def.id);
+                return (
+                  <div
+                    key={def.id}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${
+                      unlocked
+                        ? "bg-violet-500/10 border-violet-500/30"
+                        : "bg-white/5 border-white/5 opacity-30"
+                    }`}
+                    title={def.description}
+                  >
+                    <span className={`text-2xl ${unlocked ? "" : "grayscale"}`}>{def.emoji}</span>
+                    <p className="text-xs text-white/70 font-medium text-center leading-tight">{def.name}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

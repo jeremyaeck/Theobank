@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, unauthorized } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { ACHIEVEMENTS } from "@/lib/achievements";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
@@ -31,6 +32,21 @@ export async function GET(req: NextRequest) {
     },
     include: { user: { select: { username: true } } },
     orderBy: { usedAt: "desc" },
+  });
+
+  // Recently unlocked achievements (last 30s)
+  const recentAchievements = await prisma.userAchievement.findMany({
+    where: {
+      userId: user.id,
+      unlockedAt: { gt: new Date(Date.now() - 30000) },
+    },
+    orderBy: { unlockedAt: "desc" },
+  });
+
+  // All achievements for profile display
+  const allAchievements = await prisma.userAchievement.findMany({
+    where: { userId: user.id },
+    orderBy: { unlockedAt: "asc" },
   });
 
   // Get user's team
@@ -85,5 +101,27 @@ export async function GET(req: NextRequest) {
       targetUsername: (e.data as any)?.targetUsername,
       usedAt: e.usedAt.toISOString(),
     })),
+    newAchievements: recentAchievements.map((a) => {
+      const def = ACHIEVEMENTS[a.achievementId] || { name: a.achievementId, description: "", emoji: "🏅" };
+      return {
+        id: a.id,
+        achievementId: a.achievementId,
+        name: def.name,
+        description: def.description,
+        emoji: def.emoji,
+        unlockedAt: a.unlockedAt.toISOString(),
+      };
+    }),
+    achievements: allAchievements.map((a) => {
+      const def = ACHIEVEMENTS[a.achievementId] || { name: a.achievementId, description: "", emoji: "🏅" };
+      return {
+        id: a.id,
+        achievementId: a.achievementId,
+        name: def.name,
+        description: def.description,
+        emoji: def.emoji,
+        unlockedAt: a.unlockedAt.toISOString(),
+      };
+    }),
   });
 }

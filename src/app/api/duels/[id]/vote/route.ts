@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthUser, unauthorized } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
 
 const schema = z.object({
   winnerId: z.string().min(1),
@@ -140,6 +141,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       return partial;
     });
+
+    // Trigger achievement checks after duel resolution (outside transaction)
+    if (result && result.status === "COMPLETED" && result.winnerId) {
+      checkAndUnlockAchievements(result.winnerId, "DUEL_WIN").catch(() => {});
+    }
 
     return NextResponse.json({ duel: result });
   } catch (e: any) {

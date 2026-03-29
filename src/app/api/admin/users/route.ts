@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthUser, unauthorized, forbidden } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
@@ -85,6 +86,11 @@ export async function PATCH(req: NextRequest) {
 
       return u;
     });
+
+    // Trigger millionaire achievement check on credits
+    if (amount > 0) {
+      checkAndUnlockAchievements(userId, "BALANCE_INCREASE").catch(() => {});
+    }
 
     return NextResponse.json({
       user: {

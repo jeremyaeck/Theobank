@@ -2,12 +2,13 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import type { User } from "@/types";
+import type { User, Achievement } from "@/types";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  achievements: Achievement[];
   login: (username: string, password: string) => Promise<void>;
   signup: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   loading: true,
+  achievements: [],
   login: async () => {},
   signup: async () => {},
   logout: () => {},
@@ -32,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const router = useRouter();
 
   const fetchUser = useCallback(async (t: string) => {
@@ -42,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
+        if (data.achievements) setAchievements(data.achievements);
         return data.user;
       }
       throw new Error("Invalid token");
@@ -110,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, signup, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, achievements, login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

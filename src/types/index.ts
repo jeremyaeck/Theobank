@@ -98,6 +98,24 @@ export interface StealAlert {
   usedAt: string;
 }
 
+export interface Achievement {
+  id: string;
+  achievementId: string;
+  name: string;
+  description: string;
+  emoji: string;
+  unlockedAt: string;
+}
+
+export interface NewAchievementEvent {
+  id: string;
+  achievementId: string;
+  name: string;
+  description: string;
+  emoji: string;
+  unlockedAt: string;
+}
+
 export type AuctionPhaseStatus = "LOCKED" | "ACTIVE" | "FINISHED";
 
 export interface AuctionBid {

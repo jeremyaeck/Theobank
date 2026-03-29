@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthUser, unauthorized } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
 
 const COOLDOWN_MS = 20 * 60 * 1000; // 20 minutes
 
@@ -86,6 +87,8 @@ export async function POST(req: NextRequest) {
           },
         });
 
+        checkAndUnlockAchievements(user.id, "BONUS_BOUCLIER").catch(() => {});
+
         return NextResponse.json({
           bonus: {
             id: usage.id,
@@ -129,6 +132,10 @@ export async function POST(req: NextRequest) {
             data: { amount: finalAmount, percentage: Math.round(percentage * 100) },
           },
         });
+
+        if (finalAmount > 0) {
+          checkAndUnlockAchievements(user.id, "BONUS_JACKPOT_WIN").catch(() => {});
+        }
 
         return NextResponse.json({
           bonus: {
@@ -217,6 +224,8 @@ export async function POST(req: NextRequest) {
             },
           },
         });
+
+        checkAndUnlockAchievements(user.id, "BONUS_ROUE").catch(() => {});
 
         return NextResponse.json({
           bonus: {
@@ -324,6 +333,8 @@ export async function POST(req: NextRequest) {
 
           return { usage, stolenAmount, victimUsername: victim.username };
         });
+
+        checkAndUnlockAchievements(user.id, "BONUS_VOL").catch(() => {});
 
         return NextResponse.json({
           bonus: {

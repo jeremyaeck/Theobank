@@ -24,6 +24,7 @@ model User {
   auctionBids        AuctionBid[]
   auctionWins        AuctionItem[]
   bonusUsages        BonusUsage[]
+  achievements       UserAchievement[]
   teamMembership     TeamMember?
   webAuthnCredential WebAuthnCredential?
 }
@@ -173,4 +174,15 @@ model BonusUsage {
   data           Json?
   acknowledgedAt DateTime? // For VOL: when the victim dismissed the alert
   user           User      @relation(fields: [userId], references: [id])
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
 }

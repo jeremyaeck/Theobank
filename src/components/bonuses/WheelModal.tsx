@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { WheelSegment } from "@/types";
 
-const SPIN_DURATION_MS = 5000;
+const STOP_DURATION_MS = 8000;
+const FREE_SPIN_SPEED = 400; // degrees per second
 
 export const WHEEL_SEGMENTS: WheelSegment[] = [
   { type: "JACKPOT",     emoji: "🤑", name: "Jackpot !",  description: "+40% de ton solde", color: "#F59E0B" },
@@ -36,24 +37,76 @@ export default function WheelModal({
   isSpectator = false,
   onClose,
 }: WheelModalProps) {
-  const [rotation, setRotation] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "spinning" | "stopping" | "result">("idle");
   const [showResult, setShowResult] = useState(false);
+  const wheelRef = useRef<HTMLDivElement>(null);
+  const animRef = useRef<number | null>(null);
+  const currentRotationRef = useRef(0);
 
   const segment = WHEEL_SEGMENTS[segmentIndex];
 
+  // Free spin animation loop (direct DOM manipulation for performance)
   useEffect(() => {
-    const targetRotation = 6 * 360 + (segmentIndex + 0.5) * 45;
-    const delay = setTimeout(() => {
-      setIsAnimating(true);
-      setRotation(targetRotation);
-      setTimeout(() => {
-        setIsAnimating(false);
-        setShowResult(true);
-      }, SPIN_DURATION_MS + 300);
-    }, 400);
+    if (phase !== "spinning") return;
+
+    let startTime: number | null = null;
+    const startRotation = currentRotationRef.current;
+
+    const animate = (time: number) => {
+      if (!startTime) startTime = time;
+      const elapsed = (time - startTime) / 1000;
+      currentRotationRef.current = startRotation + elapsed * FREE_SPIN_SPEED;
+      if (wheelRef.current) {
+        wheelRef.current.style.transition = "none";
+        wheelRef.current.style.transform = `rotate(${currentRotationRef.current}deg)`;
+      }
+      animRef.current = requestAnimationFrame(animate);
+    };
+
+    animRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [phase]);
+
+  // Start spinning after short delay
+  useEffect(() => {
+    const delay = setTimeout(() => setPhase("spinning"), 400);
     return () => clearTimeout(delay);
-  }, [segmentIndex]);
+  }, []);
+
+  const handleStop = useCallback(() => {
+    if (phase !== "spinning") return;
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+
+    const current = currentRotationRef.current;
+    const baseTarget = (segmentIndex + 0.5) * 45;
+    const currentMod = ((current % 360) + 360) % 360;
+    const diff = ((baseTarget - currentMod) + 360) % 360;
+    const target = current + diff + 4 * 360;
+
+    setPhase("stopping");
+
+    // Apply deceleration transition via DOM
+    requestAnimationFrame(() => {
+      if (wheelRef.current) {
+        wheelRef.current.style.transition = `transform ${STOP_DURATION_MS}ms cubic-bezier(0.12, 0.8, 0.2, 1)`;
+        wheelRef.current.style.transform = `rotate(${target}deg)`;
+      }
+    });
+
+    setTimeout(() => {
+      setPhase("result");
+      setShowResult(true);
+    }, STOP_DURATION_MS + 500);
+  }, [phase, segmentIndex]);
+
+  // Auto-stop for spectators after 3 seconds of spinning
+  useEffect(() => {
+    if (!isSpectator || phase !== "spinning") return;
+    const timer = setTimeout(() => handleStop(), 3000);
+    return () => clearTimeout(timer);
+  }, [isSpectator, phase, handleStop]);
 
   return (
     <AnimatePresence>
@@ -77,7 +130,11 @@ export default function WheelModal({
             </h2>
             {!showResult && (
               <p className="text-xs text-white/40 mt-1">
-                {isAnimating ? "La roue tourne..." : "Prépare-toi..."}
+                {phase === "stopping"
+                  ? "La roue ralentit..."
+                  : phase === "spinning"
+                  ? isSpectator ? "La roue tourne..." : "Appuie pour arrêter la roue !"
+                  : "Prépare-toi..."}
               </p>
             )}
           </div>
@@ -90,19 +147,16 @@ export default function WheelModal({
             <div className="relative w-64 h-64">
               {/* Rotating wheel */}
               <div
+                ref={wheelRef}
                 className="w-full h-full rounded-full relative overflow-hidden"
                 style={{
                   background: `conic-gradient(${GRADIENT})`,
-                  transform: `rotate(${rotation}deg)`,
-                  transition: isAnimating
-                    ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.12, 0.8, 0.2, 1)`
-                    : "none",
                   boxShadow: showResult
                     ? `0 0 40px ${segment.color}80`
                     : "0 0 20px rgba(0,0,0,0.5)",
                 }}
               >
-                {/* Segment labels (rotate with wheel) */}
+                {/* Segment labels */}
                 {WHEEL_SEGMENTS.map((seg, i) => {
                   const angleDeg = (i + 0.5) * 45;
                   const x = 50 + 35 * Math.sin((angleDeg * Math.PI) / 180);
@@ -139,6 +193,18 @@ export default function WheelModal({
               </div>
             </div>
           </div>
+
+          {/* Stop button (player only, during free spin) */}
+          {!isSpectator && phase === "spinning" && (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={handleStop}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 text-white font-bold text-base hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg"
+            >
+              Arrêter la roue
+            </motion.button>
+          )}
 
           {/* Result */}
           <AnimatePresence>
@@ -177,10 +243,8 @@ export default function WheelModal({
             )}
           </AnimatePresence>
 
-          {!showResult && (
-            <p className="text-xs text-white/20">
-              {isSpectator ? "Regardez la roue tourner..." : "Bonne chance !"}
-            </p>
+          {phase === "stopping" && (
+            <p className="text-xs text-white/20">Bonne chance !</p>
           )}
         </motion.div>
       </motion.div>

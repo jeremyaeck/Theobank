@@ -37,23 +37,27 @@ export default function Navbar() {
           </>
         )}
 
-        {/* Avatar / profile link */}
-        <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity" title="Mon profil">
-          {user.profilePhotoUrl ? (
-            <img
-              src={user.profilePhotoUrl}
-              alt={user.username}
-              className="w-8 h-8 rounded-full object-cover border border-white/20"
-            />
-          ) : (
-            <div
-              className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(user.username)} flex items-center justify-center text-xs font-bold text-white`}
-            >
-              {getInitials(user.username)}
-            </div>
-          )}
-          <span className="text-sm text-white/70 hidden sm:inline">{user.username}</span>
-        </Link>
+        {/* Avatar / profile link (players only) */}
+        {user.isAdmin ? (
+          <span className="text-sm text-white/70">{user.username}</span>
+        ) : (
+          <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity" title="Mon profil">
+            {user.profilePhotoUrl ? (
+              <img
+                src={user.profilePhotoUrl}
+                alt={user.username}
+                className="w-8 h-8 rounded-full object-cover border border-white/20"
+              />
+            ) : (
+              <div
+                className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(user.username)} flex items-center justify-center text-xs font-bold text-white`}
+              >
+                {getInitials(user.username)}
+              </div>
+            )}
+            <span className="text-sm text-white/70 hidden sm:inline">{user.username}</span>
+          </Link>
+        )}
 
         <button
           onClick={logout}

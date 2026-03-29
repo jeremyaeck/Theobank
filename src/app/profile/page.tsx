@@ -13,7 +13,7 @@ import { getInitials, getAvatarColor } from "@/lib/utils";
 import Link from "next/link";
 
 export default function ProfilePage() {
-  const { user, token, refreshUser, achievements } = useAuth();
+  const { user, token, refreshUser, achievements, auctionWins } = useAuth();
   const { addToast } = useToast();
   const [showCamera, setShowCamera] = useState(false);
   const [savingPhoto, setSavingPhoto] = useState(false);
@@ -192,6 +192,32 @@ export default function ProfilePage() {
               })}
             </div>
           </div>
+
+          {/* Auction wins section */}
+          {auctionWins.length > 0 && (
+            <div className="glass p-6 rounded-2xl space-y-4 mt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎁</span>
+                <p className="font-semibold text-white/90">Cadeaux remportés</p>
+              </div>
+              <div className="space-y-2">
+                {auctionWins.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-white/80">{item.displayName}</p>
+                      <p className="text-xs text-white/40">Phase {item.phase}</p>
+                    </div>
+                    {item.winningBid !== null && (
+                      <p className="text-sm font-bold text-amber-400">{item.winningBid} T$</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Face ID section */}
           {!user?.isAdmin && (

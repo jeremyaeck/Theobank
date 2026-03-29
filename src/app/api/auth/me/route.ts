@@ -49,6 +49,20 @@ export async function GET(req: NextRequest) {
     orderBy: { unlockedAt: "asc" },
   });
 
+  // Get auction wins
+  const auctionWins = await prisma.auctionItem.findMany({
+    where: { winnerId: user.id },
+    select: {
+      id: true,
+      name: true,
+      displayName: true,
+      isMystery: true,
+      winningBid: true,
+      phase: { select: { phase: true } },
+    },
+    orderBy: { phase: { phase: "asc" } },
+  });
+
   // Get user's team
   const teamMember = await prisma.teamMember.findFirst({
     where: { userId: user.id },
@@ -100,6 +114,14 @@ export async function GET(req: NextRequest) {
       amount: (e.data as any)?.amount ?? 0,
       targetUsername: (e.data as any)?.targetUsername,
       usedAt: e.usedAt.toISOString(),
+    })),
+    auctionWins: auctionWins.map((item) => ({
+      id: item.id,
+      name: item.isMystery ? item.name : item.displayName,
+      displayName: item.displayName,
+      isMystery: item.isMystery,
+      winningBid: item.winningBid,
+      phase: item.phase.phase,
     })),
     newAchievements: recentAchievements.map((a) => {
       const def = ACHIEVEMENTS[a.achievementId] || { name: a.achievementId, description: "", emoji: "🏅" };

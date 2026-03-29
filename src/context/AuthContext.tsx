@@ -4,11 +4,21 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { useRouter } from "next/navigation";
 import type { User, Achievement } from "@/types";
 
+interface AuctionWin {
+  id: string;
+  name: string;
+  displayName: string;
+  isMystery: boolean;
+  winningBid: number | null;
+  phase: number;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
   achievements: Achievement[];
+  auctionWins: AuctionWin[];
   login: (username: string, password: string) => Promise<void>;
   signup: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -20,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   loading: true,
   achievements: [],
+  auctionWins: [],
   login: async () => {},
   signup: async () => {},
   logout: () => {},
@@ -35,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [auctionWins, setAuctionWins] = useState<AuctionWin[]>([]);
   const router = useRouter();
 
   const fetchUser = useCallback(async (t: string) => {
@@ -46,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         setUser(data.user);
         if (data.achievements) setAchievements(data.achievements);
+        if (data.auctionWins) setAuctionWins(data.auctionWins);
         return data.user;
       }
       throw new Error("Invalid token");
@@ -114,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, achievements, login, signup, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, achievements, auctionWins, login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

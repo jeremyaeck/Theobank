@@ -52,7 +52,9 @@ export async function POST(
 
   // Trigger achievement checks for auction winners (outside transaction)
   for (const winnerId of [...new Set(winnerIds)]) {
-    checkAndUnlockAchievements(winnerId, "AUCTION_WIN").catch(() => {});
+    checkAndUnlockAchievements(winnerId, "AUCTION_WIN").catch((e) => {
+      console.error("Achievement check failed for auction winner:", winnerId, e);
+    });
   }
 
   return NextResponse.json({ success: true });

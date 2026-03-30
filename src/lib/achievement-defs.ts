@@ -20,7 +20,7 @@ export const ACHIEVEMENTS: Record<string, AchievementDef> = {
   },
   MILLIONAIRE: {
     id: "MILLIONAIRE",
-    name: "Millionnaire",
+    name: "Plein aux as",
     description: "Atteindre un solde de 1000 T$",
     emoji: "💰",
   },

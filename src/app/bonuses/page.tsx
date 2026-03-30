@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { useSocket } from "@/context/SocketContext";
 import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import BonusCard from "@/components/bonuses/BonusCard";
@@ -28,6 +29,7 @@ interface BonusState {
 export default function BonusesPage() {
   const { token, refreshUser } = useAuth();
   const { addToast } = useToast();
+  const { suppressBalanceToast } = useSocket();
 
   const [bonuses, setBonuses] = useState<BonusState[]>([]);
   const [cooldownEndsAt, setCooldownEndsAt] = useState<string | null>(null);
@@ -124,6 +126,7 @@ export default function BonusesPage() {
           expiresAt: data.bonus.expiresAt,
         });
       } else if (type === "ROUE") {
+        suppressBalanceToast();
         refreshUser();
         setWheelResult({
           segmentIndex: data.bonus.data.segmentIndex,

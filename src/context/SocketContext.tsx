@@ -18,6 +18,7 @@ interface PollingContextType {
   currentTeam: TeamInfo | null;
   currentWheelEvent: WheelEvent | null;
   clearWheelEvent: () => void;
+  suppressBalanceToast: () => void;
 }
 
 const SocketContext = createContext<PollingContextType>({
@@ -27,6 +28,7 @@ const SocketContext = createContext<PollingContextType>({
   currentTeam: null,
   currentWheelEvent: null,
   clearWheelEvent: () => {},
+  suppressBalanceToast: () => {},
 });
 
 export function useSocket() {
@@ -43,11 +45,13 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const seenStealAlertIds = useRef<Set<string>>(new Set());
   const seenWheelEventIds = useRef<Set<string>>(new Set());
   const seenAchievementIds = useRef<Set<string>>(new Set());
+  const suppressBalanceToastRef = useRef(false);
   const [currentStealAlert, setCurrentStealAlert] = useState<StealAlert | null>(null);
   const [currentTeam, setCurrentTeam] = useState<TeamInfo | null>(null);
   const [currentWheelEvent, setCurrentWheelEvent] = useState<WheelEvent | null>(null);
 
   const clearWheelEvent = useCallback(() => setCurrentWheelEvent(null), []);
+  const suppressBalanceToast = useCallback(() => { suppressBalanceToastRef.current = true; }, []);
 
   const dismissStealAlert = useCallback(async () => {
     if (currentStealAlert && token) {
@@ -82,9 +86,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
         if (lastBalanceRef.current !== null && newBalance !== lastBalanceRef.current) {
           const diff = newBalance - lastBalanceRef.current;
-          if (diff > 0 && !user.isAdmin) {
+          if (diff > 0 && !user.isAdmin && !suppressBalanceToastRef.current) {
             addToast(`+${diff} T$ reçus !`, "success");
           }
+          suppressBalanceToastRef.current = false;
           refreshUser();
         }
         lastBalanceRef.current = newBalance;
@@ -202,7 +207,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, [pollForChanges, refreshUser]);
 
   return (
-    <SocketContext.Provider value={{ refresh, currentStealAlert, dismissStealAlert, currentTeam, currentWheelEvent, clearWheelEvent }}>
+    <SocketContext.Provider value={{ refresh, currentStealAlert, dismissStealAlert, currentTeam, currentWheelEvent, clearWheelEvent, suppressBalanceToast }}>
       {children}
     </SocketContext.Provider>
   );

@@ -132,7 +132,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleBiometric}
-            disabled={biometricLoading}
+            disabled={biometricLoading || !username.trim()}
             className="w-full py-3 rounded-xl bg-white/5 border border-white/15 text-white/70 font-medium hover:bg-white/10 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
           >
             {biometricLoading ? (

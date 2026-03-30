@@ -78,7 +78,7 @@ export default function ProfilePage() {
       if (!verRes.ok) throw new Error(verData.error);
 
       await refreshUser();
-      addToast("Face ID activé avec succès !", "success");
+      addToast("Face ID / Touch ID activé avec succès !", "success");
     } catch (e: any) {
       if (e.name === "NotAllowedError") {
         addToast("Annulé", "info");

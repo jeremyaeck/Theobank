@@ -80,17 +80,25 @@ export default function WheelModal({
     if (animRef.current) cancelAnimationFrame(animRef.current);
 
     const current = currentRotationRef.current;
-    const baseTarget = (segmentIndex + 0.5) * 45;
+    // The pointer is at top. Rotating clockwise by R means the segment at angle (360 - R%360) is under the pointer.
+    // To land on segmentIndex center: 360 - (R%360) = (segmentIndex + 0.5) * 45
+    const baseTarget = (360 - (segmentIndex + 0.5) * 45 + 360) % 360;
     const currentMod = ((current % 360) + 360) % 360;
     const diff = ((baseTarget - currentMod) + 360) % 360;
-    const target = current + diff + 4 * 360;
+
+    // Calculate extra rotations so initial CSS speed matches the free spin speed (~400°/s)
+    // With bezier ratio p1y/p1x = 2, idealTotal = 400 * 8 / 2 = 1600°
+    const BEZIER_RATIO = 2;
+    const idealTotal = FREE_SPIN_SPEED * (STOP_DURATION_MS / 1000) / BEZIER_RATIO;
+    const extraTurns = Math.max(2, Math.ceil((idealTotal - diff) / 360));
+    const target = current + diff + extraTurns * 360;
 
     setPhase("stopping");
 
-    // Apply deceleration transition via DOM
+    // Apply deceleration transition — bezier starts at ~free spin speed then decelerates smoothly
     requestAnimationFrame(() => {
       if (wheelRef.current) {
-        wheelRef.current.style.transition = `transform ${STOP_DURATION_MS}ms cubic-bezier(0.12, 0.8, 0.2, 1)`;
+        wheelRef.current.style.transition = `transform ${STOP_DURATION_MS}ms cubic-bezier(0.33, 0.66, 0.1, 1)`;
         wheelRef.current.style.transform = `rotate(${target}deg)`;
       }
     });

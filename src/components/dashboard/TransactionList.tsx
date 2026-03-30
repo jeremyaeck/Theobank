@@ -8,14 +8,15 @@ import { motion, AnimatePresence } from "framer-motion";
 const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   INITIAL_BALANCE: { label: "Solde initial", icon: "🎁" },
   DUEL_LOCK: { label: "Mise bloquée", icon: "🔒" },
-  DUEL_WIN: { label: "Victoire", icon: "🏆" },
-  DUEL_REFUND: { label: "Remboursement", icon: "↩️" },
-  ADMIN_CREDIT: { label: "Crédit Banque", icon: "🏦" },
-  ADMIN_DEBIT: { label: "Débit Banque", icon: "🏦" },
+  DUEL_WIN: { label: "Victoire au défi", icon: "🏆" },
+  DUEL_REFUND: { label: "Remboursement défi", icon: "↩️" },
+  ADMIN_CREDIT: { label: "Crédit de la Banque", icon: "🏦" },
+  ADMIN_DEBIT: { label: "Débit de la Banque", icon: "🏦" },
   ADMIN_RESET: { label: "Réinitialisation", icon: "🔄" },
-  AUCTION_BID: { label: "Enchère", icon: "🔨" },
-  BONUS_STEAL_GAIN: { label: "Vol (gain)", icon: "🦹" },
-  BONUS_STEAL_LOSS: { label: "Vol (perte)", icon: "😱" },
+  AUCTION_BID: { label: "Enchère placée", icon: "🔨" },
+  BONUS_STEAL_GAIN: { label: "Vol réussi", icon: "🦹" },
+  BONUS_STEAL_LOSS: { label: "Victime d'un vol", icon: "😱" },
+  BONUS_JACKPOT: { label: "Bonus", icon: "🎰" },
 };
 
 export default function TransactionList() {
@@ -77,7 +78,7 @@ export default function TransactionList() {
                     <span className="text-lg">{info.icon}</span>
                     <div>
                       <p className="text-sm text-white/80">{info.label}</p>
-                      {tx.description && (tx.type === "BONUS_STEAL_GAIN" || tx.type === "BONUS_STEAL_LOSS") && (
+                      {tx.description && tx.type.startsWith("BONUS_") && (
                         <p className="text-xs text-white/60">{tx.description}</p>
                       )}
                       <p className="text-xs text-white/40">

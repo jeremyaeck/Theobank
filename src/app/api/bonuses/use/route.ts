@@ -24,6 +24,17 @@ function pickWheelSegment(): number {
 
 const WHEEL_SEGMENT_TYPES = ["JACKPOT", "GAIN", "VOL_RANDOM", "PLUIE", "RIEN", "MALUS", "RUINE", "JACKPOT_INV"] as const;
 
+const WHEEL_FRIENDLY_NAMES: Record<string, string> = {
+  JACKPOT: "🤑 Jackpot ! +40% de ton solde",
+  GAIN: "💸 Gain : +20% de ton solde",
+  VOL_RANDOM: "🦹 Vol : 10% volé à un joueur",
+  PLUIE: "💰 Pluie de T$ : +25% de ton solde",
+  RIEN: "😐 Rien du tout...",
+  MALUS: "💀 Malus : -15% de ton solde",
+  RUINE: "🔥 Ruine : -20% redistribué",
+  JACKPOT_INV: "☠️ Jackpot inversé : -35% de ton solde",
+};
+
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req);
   if (!user) return unauthorized();
@@ -119,7 +130,7 @@ export async function POST(req: NextRequest) {
               userId: user.id,
               amount: finalAmount,
               type: "BONUS_JACKPOT",
-              description: `Jackpot (${finalAmount >= 0 ? "+" : ""}${Math.round(percentage * 100)}%)`,
+              description: `🎰 Jackpot : ${finalAmount >= 0 ? "+" : ""}${Math.round(percentage * 100)}% de ton solde`,
             },
           });
         });
@@ -206,7 +217,7 @@ export async function POST(req: NextRequest) {
               userId: user.id,
               amount,
               type: "BONUS_JACKPOT",
-              description: `Roue du Destin — ${segmentType}`,
+              description: `🎡 Roue — ${WHEEL_FRIENDLY_NAMES[segmentType] || segmentType}`,
             },
           });
         }
@@ -306,13 +317,13 @@ export async function POST(req: NextRequest) {
                   userId: victimId,
                   amount: -stolenAmount,
                   type: "BONUS_STEAL_LOSS",
-                  description: `Vol par ${user.username}`,
+                  description: `${user.username} t'a volé ${stolenAmount} T$`,
                 },
                 {
                   userId: user.id,
                   amount: stolenAmount,
                   type: "BONUS_STEAL_GAIN",
-                  description: `Vol sur ${victim.username}`,
+                  description: `Tu as volé ${stolenAmount} T$ à ${victim.username}`,
                 },
               ],
             });

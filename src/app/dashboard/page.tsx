@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import BalanceDisplay from "@/components/dashboard/BalanceDisplay";
@@ -9,13 +9,22 @@ import TransactionList from "@/components/dashboard/TransactionList";
 import TeamCard from "@/components/dashboard/TeamCard";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface ActiveAuction {
+  id: string;
+  phase: number;
+  endsAt: string | null;
+  itemCount: number;
+}
 
 export default function DashboardPage() {
   const { user, token } = useAuth();
   const [gameOver, setGameOver] = useState(false);
+  const [activeAuction, setActiveAuction] = useState<ActiveAuction | null>(null);
+  const [auctionTimeLeft, setAuctionTimeLeft] = useState("");
 
-  useEffect(() => {
+  const fetchAuctions = useCallback(() => {
     if (!token) return;
     fetch("/api/auctions", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
@@ -23,9 +32,48 @@ export default function DashboardPage() {
         const phases = d.phases || [];
         const phase4 = phases.find((p: any) => p.phase === 4);
         setGameOver(phase4?.status === "FINISHED");
+
+        const active = phases.find((p: any) => p.status === "ACTIVE");
+        if (active) {
+          setActiveAuction({
+            id: active.id,
+            phase: active.phase,
+            endsAt: active.endsAt,
+            itemCount: active.items?.length || 0,
+          });
+        } else {
+          setActiveAuction(null);
+        }
       })
       .catch(() => {});
   }, [token]);
+
+  useEffect(() => {
+    fetchAuctions();
+    const interval = setInterval(fetchAuctions, 5000);
+    return () => clearInterval(interval);
+  }, [fetchAuctions]);
+
+  // Countdown timer for active auction
+  useEffect(() => {
+    if (!activeAuction?.endsAt) {
+      setAuctionTimeLeft("");
+      return;
+    }
+    const updateTimer = () => {
+      const remaining = new Date(activeAuction.endsAt!).getTime() - Date.now();
+      if (remaining <= 0) {
+        setAuctionTimeLeft("Terminée");
+        return;
+      }
+      const min = Math.floor(remaining / 60000);
+      const sec = Math.floor((remaining % 60000) / 1000);
+      setAuctionTimeLeft(`${min}:${sec.toString().padStart(2, "0")}`);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [activeAuction?.endsAt]);
 
   return (
     <AuthGuard>
@@ -38,6 +86,39 @@ export default function DashboardPage() {
         >
           <BalanceDisplay balance={user?.balance || 0} />
         </motion.div>
+
+        <AnimatePresence>
+          {activeAuction && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: 0.12 }}
+            >
+              <Link
+                href={`/auctions/${activeAuction.id}`}
+                className="block w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-orange-500/30 border border-white/20 relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)] pointer-events-none" />
+                <div className="flex items-center justify-between relative">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl animate-pulse">🔨</span>
+                    <div>
+                      <p className="text-base">Enchère Phase {activeAuction.phase} en cours !</p>
+                      <p className="text-xs text-white/70 font-normal">{activeAuction.itemCount} objets disponibles</p>
+                    </div>
+                  </div>
+                  {auctionTimeLeft && auctionTimeLeft !== "Terminée" && (
+                    <div className="text-right">
+                      <p className="text-xs text-white/70 font-normal">Temps restant</p>
+                      <p className="text-lg font-mono font-black tabular-nums">{auctionTimeLeft}</p>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {gameOver && (
           <motion.div

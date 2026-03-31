@@ -78,8 +78,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
               opponentVote,
             },
             include: {
-              challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-              opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+              challenger: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
+              opponent: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
             },
           });
 
@@ -121,8 +121,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
               opponentVote,
             },
             include: {
-              challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-              opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+              challenger: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
+              opponent: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
             },
           });
 
@@ -134,8 +134,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const partial = await tx.duel.findUnique({
         where: { id },
         include: {
-          challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-          opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+          challenger: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
+          opponent: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
         },
       });
 

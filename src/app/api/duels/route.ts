@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
       OR: [{ challengerId: user.id }, { opponentId: user.id }],
     },
     include: {
-      challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-      opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+      challenger: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
+      opponent: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
           betAmount,
         },
         include: {
-          challenger: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
-          opponent: { select: { id: true, username: true, balance: true, isAdmin: true, createdAt: true } },
+          challenger: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
+          opponent: { select: { id: true, username: true, balance: true, isAdmin: true, profilePhotoUrl: true, createdAt: true } },
         },
       });
 

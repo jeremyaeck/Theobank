@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
+import PlayerAvatar from "@/components/ui/PlayerAvatar";
 import type { User } from "@/types";
 
 interface StealTargetPickerProps {
@@ -70,9 +71,7 @@ export default function StealTargetPicker({ onConfirm, onClose, loading }: Steal
                       : "bg-white/5 border border-transparent hover:bg-white/10"
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                    {p.username.charAt(0).toUpperCase()}
-                  </div>
+                  <PlayerAvatar username={p.username} profilePhotoUrl={p.profilePhotoUrl} size="sm" />
                   <span className="text-white/80 font-medium text-sm">{p.username}</span>
                   {selectedId === p.id && (
                     <span className="ml-auto text-red-400 text-xs">✓</span>

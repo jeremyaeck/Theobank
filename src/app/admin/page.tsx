@@ -7,7 +7,8 @@ import { useToast } from "@/context/ToastContext";
 import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
-import { getInitials, getAvatarColor, formatTD } from "@/lib/utils";
+import { formatTD } from "@/lib/utils";
+import PlayerAvatar from "@/components/ui/PlayerAvatar";
 import type { User, Duel, AuctionPhase, Team } from "@/types";
 
 export default function AdminPage() {
@@ -458,13 +459,7 @@ export default function AdminPage() {
                     className="glass flex items-center justify-between px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full bg-gradient-to-br ${getAvatarColor(
-                          u.username
-                        )} flex items-center justify-center text-sm font-bold text-white`}
-                      >
-                        {getInitials(u.username)}
-                      </div>
+                      <PlayerAvatar username={u.username} profilePhotoUrl={u.profilePhotoUrl} />
                       <div>
                         <p className="text-sm font-medium text-white/90">
                           {u.username}

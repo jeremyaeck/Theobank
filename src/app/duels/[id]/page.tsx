@@ -7,7 +7,7 @@ import { useToast } from "@/context/ToastContext";
 import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import { motion } from "framer-motion";
-import { getInitials, getAvatarColor } from "@/lib/utils";
+import PlayerAvatar from "@/components/ui/PlayerAvatar";
 import type { Duel } from "@/types";
 
 const STATUS_LABELS: Record<string, { label: string; color: string; desc: string }> = {
@@ -16,17 +16,6 @@ const STATUS_LABELS: Record<string, { label: string; color: string; desc: string
   COMPLETED: { label: "Terminé", color: "text-green-400", desc: "Le duel est terminé" },
   CANCELLED: { label: "Annulé", color: "text-red-400", desc: "Le duel a été annulé" },
 };
-
-function Avatar({ name, size = "lg" }: { name: string; size?: "sm" | "lg" }) {
-  const s = size === "lg" ? "w-16 h-16 text-xl" : "w-10 h-10 text-sm";
-  return (
-    <div
-      className={`${s} rounded-full bg-gradient-to-br ${getAvatarColor(name)} flex items-center justify-center font-bold text-white`}
-    >
-      {getInitials(name)}
-    </div>
-  );
-}
 
 export default function DuelDetailPage() {
   const params = useParams();
@@ -150,7 +139,7 @@ export default function DuelDetailPage() {
 
             <div className="grid grid-cols-3 items-center gap-2">
               <div className="text-center flex flex-col items-center">
-                <Avatar name={duel.challenger.username} />
+                <PlayerAvatar username={duel.challenger.username} profilePhotoUrl={duel.challenger.profilePhotoUrl} size="lg" />
                 <p className="text-sm text-white/80 mt-2 font-medium truncate max-w-full">
                   {duel.challenger.username}
                 </p>
@@ -165,7 +154,7 @@ export default function DuelDetailPage() {
               </div>
 
               <div className="text-center flex flex-col items-center">
-                <Avatar name={duel.opponent.username} />
+                <PlayerAvatar username={duel.opponent.username} profilePhotoUrl={duel.opponent.profilePhotoUrl} size="lg" />
                 <p className="text-sm text-white/80 mt-2 font-medium truncate max-w-full">
                   {duel.opponent.username}
                 </p>
@@ -233,7 +222,7 @@ export default function DuelDetailPage() {
                   disabled={acting}
                   className="flex-1 glass p-4 text-center hover:bg-white/10 transition-colors rounded-xl disabled:opacity-50"
                 >
-                  <Avatar name={duel.challenger.username} size="sm" />
+                  <PlayerAvatar username={duel.challenger.username} profilePhotoUrl={duel.challenger.profilePhotoUrl} />
                   <p className="text-sm text-white/80 mt-2">{duel.challenger.username}</p>
                 </button>
                 <button
@@ -241,7 +230,7 @@ export default function DuelDetailPage() {
                   disabled={acting}
                   className="flex-1 glass p-4 text-center hover:bg-white/10 transition-colors rounded-xl disabled:opacity-50"
                 >
-                  <Avatar name={duel.opponent.username} size="sm" />
+                  <PlayerAvatar username={duel.opponent.username} profilePhotoUrl={duel.opponent.profilePhotoUrl} />
                   <p className="text-sm text-white/80 mt-2">{duel.opponent.username}</p>
                 </button>
               </div>

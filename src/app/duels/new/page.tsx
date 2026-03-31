@@ -7,7 +7,7 @@ import { useToast } from "@/context/ToastContext";
 import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/layout/Navbar";
 import { motion } from "framer-motion";
-import { getInitials, getAvatarColor } from "@/lib/utils";
+import PlayerAvatar from "@/components/ui/PlayerAvatar";
 import type { User } from "@/types";
 
 export default function NewDuelPage() {
@@ -107,13 +107,7 @@ export default function NewDuelPage() {
                         : "hover:bg-white/5"
                     }`}
                   >
-                    <div
-                      className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(
-                        p.username
-                      )} flex items-center justify-center text-xs font-bold text-white`}
-                    >
-                      {getInitials(p.username)}
-                    </div>
+                    <PlayerAvatar username={p.username} profilePhotoUrl={p.profilePhotoUrl} size="sm" />
                     <span className="text-sm text-white/80">{p.username}</span>
                   </button>
                 ))}

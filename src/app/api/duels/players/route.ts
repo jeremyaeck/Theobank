@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   const players = await prisma.user.findMany({
     where: { isAdmin: false, approved: true },
-    select: { id: true, username: true, isAdmin: true, createdAt: true },
+    select: { id: true, username: true, isAdmin: true, profilePhotoUrl: true, createdAt: true },
     orderBy: { username: "asc" },
   });
 
